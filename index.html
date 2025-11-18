@@ -3,634 +3,409 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGCO - Sistema de Gestión de Calidad en Obra</title>
-    <!-- Incluir Tailwind CSS -->
+    <title>Gestión de Calidad - Hospital Isaías</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .animate-spin { display: inline-block; animation: spin 1s linear infinite; }
-        
-        /* (v14) Ya no hay vistas de login, solo pestañas */
-        .view-app { display: none; }
-        #view-dashboard { display: block; } /* Mostrar Dashboard al inicio */
-        
-        /* (v12) Mejoras visuales en el formulario */
-        fieldset {
-            border-top: 1px solid #e5e7eb;
-            padding-top: 1.5rem;
-            margin-top: 1.5rem;
-        }
-        fieldset:first-of-type {
-            border-top: none;
-            margin-top: 0;
-            padding-top: 0;
-        }
+        .loader { border-top-color: #3498db; -webkit-animation: spinner 1.5s linear infinite; animation: spinner 1.5s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .view-section { display: none; }
+        #view-dashboard { display: block; }
     </style>
 </head>
-<body class="bg-gray-100 font-sans" id="app-body">
+<body class="bg-gray-100 min-h-screen font-sans">
 
-    <!-- Notificador de Estado Global -->
-    <div id="upload-status" class="hidden fixed top-4 right-4 z-50 p-3 text-center text-sm text-white rounded-md shadow-lg transition-all duration-300"></div>
+    <!-- Notificación Flotante -->
+    <div id="notification" class="hidden fixed top-4 right-4 px-6 py-4 rounded shadow-lg text-white font-bold z-50 transition-opacity duration-500"></div>
 
-    <!-- (v14) Contenedor Principal (Ya no está oculto) -->
-    <div id="view-main-app" class="container mx-auto p-4 md:p-8">
-        <!-- Cabecera -->
-        <header class="mb-6 flex justify-between items-center">
+    <div class="container mx-auto px-4 py-6">
+        
+        <!-- Encabezado -->
+        <header class="bg-white rounded-lg shadow-md p-6 mb-6 border-l-4 border-blue-800 flex justify-between items-center">
             <div>
-                <h1 class="text-3xl font-bold text-blue-900">Sistema de Gestión de Calidad en Obra (SGCO)</h1>
-                <p class="text-xl text-gray-600">Proyecto: Hospital de Segundo Nivel Isaías</p>
+                <h1 class="text-2xl font-bold text-gray-800">Sistema de Gestión de Calidad (SGCO)</h1>
+                <p class="text-gray-600 text-sm">Proyecto: Hospital de Segundo Nivel Isaías</p>
             </div>
-             <!-- (v14) Sección de Login/Logout eliminada -->
+            <div class="text-right hidden md:block">
+                <p class="text-xs text-gray-400">v14.0</p>
+            </div>
         </header>
 
-        <!-- Navegación de Pestañas (Vistas) -->
-        <div class="border-b border-gray-300 mb-6">
-            <nav class="flex -mb-px space-x-6">
-                <button id="btn-tab-dashboard" onclick="showView('dashboard')" class="py-3 px-1 border-b-4 font-medium text-blue-600 border-blue-600 focus:outline-none">
-                    Dashboard (RNC Abiertas)
-                </button>
-                <button id="btn-tab-inspeccion" onclick="showView('inspeccion')" class="py-3 px-1 border-b-4 font-medium text-gray-600 hover:text-blue-600 hover:border-blue-600 border-transparent focus:outline-none">
-                    Registrar Inspección
-                </button>
-            </nav>
+        <!-- Navegación -->
+        <div class="flex mb-6 bg-white rounded-lg shadow overflow-hidden">
+            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="flex-1 py-4 px-6 text-center bg-blue-50 text-blue-700 font-bold border-b-2 border-blue-700 transition-colors">
+                RNCs Abiertas
+            </button>
+            <button onclick="switchTab('inspection')" id="tab-inspection" class="flex-1 py-4 px-6 text-center text-gray-600 hover:bg-gray-50 border-b-2 border-transparent transition-colors">
+                Nueva Inspección
+            </button>
         </div>
 
-        <!-- VISTA 1: DASHBOARD DE RNCs ABIERTAS -->
-        <div id="view-dashboard" class="view-app" style="display: block;">
-            <section>
-                <h2 class="text-xl font-semibold text-gray-800 mb-3">Reporte de No Conformidades (RNCs) Abiertas</h2>
-                <div class="bg-white shadow-lg rounded-lg overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-100">
-                                <tr>
-                                    <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Fecha</th>
-                                    <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Supervisor</th> 
-                                    <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Protocolo</th>
-                                    <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Área</th>
-                                    <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Defecto</th>
-                                    <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Responsable</th>
-                                    <th class="p-3 text-center text-xs font-semibold text-gray-600 uppercase">Evidencia</th>
-                                    <th class="p-3 text-center text-xs font-semibold text-gray-600 uppercase">Acción</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200" id="rnc-table-body">
-                                <!-- Filas generadas por JS -->
-                            </tbody>
-                        </table>
-                    </div>
+        <!-- VISTA 1: DASHBOARD -->
+        <div id="view-dashboard" class="view-section">
+            <div class="bg-white rounded-lg shadow overflow-hidden">
+                <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+                    <h2 class="text-lg font-semibold text-gray-700">Listado de No Conformidades Pendientes</h2>
+                    <button onclick="loadDashboard()" class="text-blue-600 hover:text-blue-800 text-sm font-semibold">↻ Actualizar</button>
                 </div>
-            </section>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                                <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Supervisor</th>
+                                <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Área</th>
+                                <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Defecto</th>
+                                <th class="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Evidencia</th>
+                                <th class="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-rncs" class="bg-white divide-y divide-gray-200 text-sm">
+                            <tr><td colspan="6" class="py-8 text-center text-gray-500">Cargando datos...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
-        <!-- VISTA 2: FORMULARIO DE NUEVA INSPECCIÓN (MODIFICADO v14) -->
-        <div id="view-inspeccion" class="view-app" style="display: none;">
-            <div class="bg-white p-6 rounded-lg shadow-lg">
+        <!-- VISTA 2: FORMULARIO INSPECCIÓN -->
+        <div id="view-inspection" class="view-section">
+            <div class="bg-white rounded-lg shadow-lg p-6 max-w-3xl mx-auto">
                 
-                <!-- Paso 1: Seleccionar Protocolo -->
-                <form id="form-step-1" class="space-y-4">
-                    <h2 class="text-xl font-semibold text-gray-800">Paso 1: Iniciar Inspección</h2>
-                    <fieldset class="space-y-4" style="border-top: none; margin-top: 0; padding-top: 0;">
-                        
-                        <!-- *** ¡NUEVO (v14) - SU IDEA! *** -->
+                <!-- PASO 1: Configuración -->
+                <div id="step-1">
+                    <div class="mb-6 border-b pb-4">
+                        <h2 class="text-xl font-bold text-gray-800">1. Datos de la Inspección</h2>
+                        <p class="text-sm text-gray-500">Seleccione quién realiza la inspección y qué se va a revisar.</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <!-- Selector de Supervisor (La solución v14) -->
                         <div>
-                            <label for="insp-supervisor" class="block text-sm font-medium text-gray-700">Seleccione su Nombre (Supervisor)</label>
-                            <select id="insp-supervisor" name="insp-supervisor" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                <option value="">Cargando supervisores...</option>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Supervisor Responsable</label>
+                            <select id="input-supervisor" class="w-full p-3 border border-gray-300 rounded-lg bg-blue-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                                <option value="">Cargando lista de usuarios...</option>
                             </select>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label for="insp-protocolo" class="block text-sm font-medium text-gray-700">Seleccione el Protocolo a Inspeccionar</label>
-                                <select id="insp-protocolo" name="insp-protocolo" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                    <option value="">(Primero seleccione un supervisor)</option>
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Protocolo</label>
+                                <select id="input-protocolo" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Cargando protocolos...</option>
                                 </select>
                             </div>
                             <div>
-                                <label for="insp-area" class="block text-sm font-medium text-gray-700">Área / Sector de Inspección</label>
-                                <input type="text" id="insp-area" name="insp-area" placeholder="Ej: Bloque B, Piso 2, Eje 4-5" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Área / Ubicación</label>
+                                <input type="text" id="input-area" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ej: Losa Nivel 2, Eje 4-A">
                             </div>
                         </div>
-                    </fieldset>
-                    <div class="text-right">
-                        <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-blue-700">
-                            Cargar Checklist
+                    </div>
+
+                    <div class="mt-8">
+                        <button onclick="loadChecklist()" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition shadow-md">
+                            Iniciar Checklist
                         </button>
                     </div>
-                </form>
+                </div>
 
-                <!-- Paso 2: Ejecutar Checklist (Oculto) -->
-                <form id="form-step-2" class="space-y-6 hidden">
-                    <fieldset>
-                        <legend class="text-xl font-semibold text-gray-800">Paso 2: Ejecutar Checklist para <span id="checklist-title" class="text-blue-700"></span></legend>
-                        <div id="checklist-items-container" class="space-y-3 mt-4">
-                            <!-- Items de checklist generados por JS -->
+                <!-- PASO 2: Checklist (Oculto inicialmente) -->
+                <div id="step-2" class="hidden">
+                    <div class="mb-6 border-b pb-4">
+                        <h2 class="text-xl font-bold text-gray-800">2. Verificación</h2>
+                        <p class="text-sm text-gray-500">Marque cada ítem. Si selecciona "Rechazado", se abrirá una RNC.</p>
+                    </div>
+
+                    <div id="checklist-container" class="space-y-4 mb-8">
+                        <!-- Aquí se inyectan los items dinámicamente -->
+                    </div>
+
+                    <!-- Panel RNC (Automático) -->
+                    <div id="panel-rnc" class="hidden bg-red-50 border-l-4 border-red-500 p-5 rounded-r-lg mb-8">
+                        <div class="flex items-center mb-4">
+                            <svg class="w-6 h-6 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            <h3 class="text-lg font-bold text-red-800">Se requiere Reporte de No Conformidad (RNC)</h3>
                         </div>
-                    </fieldset>
-                    
-                    <!-- Paso 3: Formulario RNC (Oculto, solo aparece si algo es Rechazado) -->
-                    <div id="rnc-form-container" class="hidden">
-                        <fieldset class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
-                            <legend class="text-lg font-bold text-red-800">¡Inspección RECHAZADA!</legend>
-                            <p class="text-red-700">Se requiere una No Conformidad (RNC) para los ítems rechazados.</p>
-                            <div class="space-y-3 mt-4">
+                        
+                        <div class="grid grid-cols-1 gap-4">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-1">Descripción del Defecto</label>
+                                <textarea id="input-defecto" class="w-full p-2 border border-red-300 rounded focus:ring-red-500 focus:border-red-500" rows="2" placeholder="Describa brevemente la falla encontrada..."></textarea>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label for="rnc-defecto" class="block text-sm font-medium text-gray-700">Descripción del Defecto (Resumido)</label>
-                                    <textarea id="rnc-defecto" name="rnc-defecto" rows="3" placeholder="Ej: Estribos en Viga V-102 con separación de 25cm en lugar de 15cm." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></textarea>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">Responsable Corrección</label>
+                                    <input type="text" id="input-responsable" class="w-full p-2 border border-red-300 rounded" placeholder="Ej: Contratista Civil">
                                 </div>
                                 <div>
-                                    <label for="rnc-responsable" class="block text-sm font-medium text-gray-700">Responsable de la Corrección</label>
-                                    <input type="text" id="rnc-responsable" name="rnc-responsable" placeholder="Ej: Contratista Z&Z" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                                </div>
-                                <div>
-                                    <label for="rnc-foto" class="block text-sm font-medium text-gray-700">Evidencia (Foto del Defecto)</label>
-                                    <input type="file" id="rnc-foto" name="rnc-foto" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:font-semibold file:bg-red-100 file:text-red-700 hover:file:bg-red-200">
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">Foto Evidencia</label>
+                                    <input type="file" id="input-foto" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-100 file:text-red-700 hover:file:bg-red-200">
                                 </div>
                             </div>
-                        </fieldset>
+                        </div>
                     </div>
 
-                    <!-- Botones Finales -->
-                    <div class="flex justify-end gap-3 pt-4 border-t">
-                         <button type="button" id="cancel-checklist-btn" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Cancelar</button>
-                        <button type="submit" id="submit-inspection-btn" class="bg-green-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-green-700">
-                            Finalizar Inspección (Aprobar)
+                    <div class="flex gap-4 border-t pt-6">
+                        <button onclick="cancelInspection()" class="w-1/3 bg-gray-200 text-gray-700 font-bold py-3 rounded-lg hover:bg-gray-300 transition">
+                            Cancelar
+                        </button>
+                        <button onclick="submitInspection()" id="btn-save" class="w-2/3 bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition shadow-md flex justify-center items-center">
+                            <span>Guardar Inspección</span>
                         </button>
                     </div>
-                </form>
+                </div>
+
             </div>
         </div>
-
-        <!-- Pie de página -->
-        <footer class="mt-12 pt-6 border-t border-gray-300 text-center text-sm text-gray-500">
-            <p>
-                Desarrollado por Zacarias Ortega para el Proyecto Construcción Hospital de Segundo Nivel Isaías - Oruro
-            </p>
-        </footer>
     </div>
 
-    <!-- Script principal del aplicativo (v14 - Con Lista Desplegable) -->
+    <!-- LÓGICA DEL SISTEMA -->
     <script>
-        // -----------------------------------------------------------------
-        // SCRIPT v14: LÓGICA DEL APLICATIVO DE CALIDAD
-        // -----------------------------------------------------------------
+        // ==========================================
+        // CONFIGURACIÓN
+        // ==========================================
+        // ¡PEGUE SU NUEVA URL DE APPS SCRIPT (v14) AQUÍ ABAJO!
+        const API_URL = "https://script.google.com/macros/s/AKfycbwf8905psxBJVEIoBDR_S9okVC16u3bEGhuzHrrk1GEdvfW0OILtzOfGzeVbTgIoa_7-w/exec"; 
+        // ==========================================
 
-        // ¡¡¡IMPORTANTE!!! Usted deberá pegar aquí la URL de su API de Google Apps Script
-        const G_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwf8905psxBJVEIoBDR_S9okVC16u3bEGhuzHrrk1GEdvfW0OILtzOfGzeVbTgIoa_7-w/exec";
-
-        // (v14) Variable global para guardar el supervisor seleccionado
-        let currentSupervisor = null; 
-        
-        let currentProtocolos = [];
         let currentChecklist = [];
-        let currentInspectionData = {};
+        let isRNC = false;
 
-        // --- Funciones de Utilidad ---
-        function showNotification(message, type = 'info') {
-            const statusEl = document.getElementById('upload-status');
-            if (!statusEl) return;
-            statusEl.classList.remove('hidden', 'bg-blue-500', 'bg-red-500', 'bg-green-500');
-            if (type === 'error') statusEl.classList.add('bg-red-500');
-            else if (type === 'success') statusEl.classList.add('bg-green-500');
-            else statusEl.classList.add('bg-blue-500');
-            statusEl.textContent = message;
-            statusEl.classList.remove('hidden');
-            setTimeout(() => statusEl.classList.add('hidden'), 4000);
-        }
-        
-        function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result.split(',')[1]);
-                reader.onerror = error => reject(error);
-            });
-        }
-        
-        // (v11) Romper la caché de Google Apps Script
-        function getCacheBustUrl(url) {
-            const cacheBust = new Date().getTime();
-            const separator = url.includes('?') ? '&' : '?';
-            return `${url}${separator}cacheBust=${cacheBust}`;
-        }
-
-        // --- Control de Vistas (v14 - Simplificado) ---
-        function showView(viewName) {
-            // Manejar las pestañas internas
-            document.querySelectorAll('.view-app').forEach(v => v.style.display = 'none');
-            document.getElementById(`view-${viewName}`).style.display = 'block';
-            
-            document.querySelectorAll('nav button').forEach(b => {
-                b.classList.remove('text-blue-600', 'border-blue-600');
-                b.classList.add('text-gray-600', 'border-transparent');
-            });
-            document.getElementById(`btn-tab-${viewName}`).classList.add('text-blue-600', 'border-blue-600');
-
-            if (viewName === 'dashboard') loadRNCs();
-            if (viewName === 'inspeccion') resetFormStep1();
-        }
-        
-        function resetFormStep1() {
-            document.getElementById('form-step-1').classList.remove('hidden');
-            document.getElementById('form-step-2').classList.add('hidden');
-            document.getElementById('rnc-form-container').classList.add('hidden');
-            
-            // No reseteamos el supervisor, solo el protocolo y el área
-            document.getElementById('insp-protocolo').value = "";
-            document.getElementById('insp-area').value = "";
-            
-            currentChecklist = [];
-            currentInspectionData = {};
-        }
-
-        // --- Lógica de Carga de Datos (GET) (v14 - Modificado) ---
-
-        // (v14) Cargar la lista de usuarios en el dropdown
-        async function loadUsuarios() {
-             const select = document.getElementById('insp-supervisor');
-             try {
-                if (G_APP_SCRIPT_URL === "PEGUE_SU_URL_DE_APPS_SCRIPT_AQUI") { 
-                    if (window.location.protocol === 'blob:') {
-                         select.innerHTML = '<option value="Usuario de Prueba (Simulación)">Usuario de Prueba (Simulación)</option>';
-                         return;
-                    }
-                    throw new Error("API URL no configurada.");
-                }
-
-                const url = getCacheBustUrl(`${G_APP_SCRIPT_URL}?action=getUsuarios`);
-                const response = await fetch(url);
-                const data = await response.json();
-                
-                if (response.status !== 200 || data.status !== 'success') {
-                    throw new Error(data.message || 'Error al cargar usuarios');
-                }
-                
-                select.innerHTML = '<option value="">Seleccione su nombre...</option>';
-                
-                data.usuarios.forEach(nombre => {
-                    const option = document.createElement('option');
-                    option.value = nombre;
-                    option.textContent = nombre;
-                    select.appendChild(option);
-                });
-            } catch (error) {
-                console.error("Error al cargar usuarios:", error);
-                showNotification("Error al cargar lista de usuarios: " + error.message, 'error');
-                select.innerHTML = '<option value="">Error al cargar usuarios</option>';
-            }
-        }
-
-        async function loadProtocolos() {
-            try {
-                if (G_APP_SCRIPT_URL === "PEGUE_SU_URL_DE_APPS_SCRIPT_AQUI") { return; } 
-
-                const url = getCacheBustUrl(`${G_APP_SCRIPT_URL}?action=getProtocolos`);
-                const response = await fetch(url);
-                const data = await response.json();
-                if (data.status !== 'success') throw new Error(data.message);
-                
-                currentProtocolos = data.protocolos;
-                const select = document.getElementById('insp-protocolo');
-                select.innerHTML = '<option value="">Seleccione un protocolo...</option>';
-                
-                if(currentProtocolos.length > 0 && !currentProtocolos[0].protocolo_id) {
-                    console.warn("Faltan cabeceras 'protocolo_id' o 'nombre_protocolo' en 'Biblioteca_Protocolos'.");
-                    showNotification("Error: Revise las cabeceras en su Google Sheet 'Biblioteca_Protocolos'.", 'error');
-                    return;
-                }
-
-                currentProtocolos.forEach(p => {
-                    const option = document.createElement('option');
-                    option.value = p.protocolo_id;
-                    option.textContent = p.nombre_protocolo;
-                    select.appendChild(option);
-                });
-            } catch (error) {
-                console.error("Error al cargar protocolos:", error);
-                showNotification("Error al cargar protocolos: " + error.message, 'error');
-            }
-        }
-
-        async function loadRNCs() {
-            const tableBody = document.getElementById('rnc-table-body');
-            tableBody.innerHTML = '<tr><td colspan="8" class="p-4 text-center">Cargando RNCs abiertas...</td></tr>';
-            try {
-                if (G_APP_SCRIPT_URL === "PEGUE_SU_URL_DE_APPS_SCRIPT_AQUI") {
-                    if (window.location.protocol === 'blob:') {
-                         tableBody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500">Modo simulación. Conecte API.</td></tr>';
-                         return;
-                    }
-                    throw new Error("API URL no configurada.");
-                }
-
-                const url = getCacheBustUrl(`${G_APP_SCRIPT_URL}?action=getRNCs`);
-                const response = await fetch(url);
-                const data = await response.json();
-                if (data.status !== 'success') throw new Error(data.message);
-                
-                tableBody.innerHTML = '';
-                if (data.rncs.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500">¡Felicidades! No hay No Conformidades abiertas.</td></tr>';
-                }
-                
-                data.rncs.forEach(rnc => {
-                    const row = document.createElement('tr');
-                    const fotoHtml = rnc.foto_url ? `<a href="${rnc.foto_url}" target="_blank" class="text-blue-600 hover:underline">Ver Foto</a>` : 'No/Disp';
-                                        
-                    row.innerHTML = `
-                        <td class="p-3 text-sm text-gray-700">${rnc.fecha_hora}</td>
-                        <td class="p-3 text-sm text-gray-700">${rnc.supervisor}</td> 
-                        <td class="p-3 text-sm text-gray-700">${rnc.protocolo_id}</td>
-                        <td class="p-3 text-sm text-gray-700">${rnc.area}</td>
-                        <td class="p-3 text-sm text-red-700">${rnc.defecto}</td>
-                        <td class="p-3 text-sm text-gray-700">${rnc.responsable}</td>
-                        <td class="p-3 text-sm text-center">${fotoHtml}</td>
-                        <td class="p-3 text-sm text-center">
-                            <button onclick="window.closeRNC(this, ${rnc.row_index})" class="bg-green-600 text-white text-xs font-bold py-1 px-2 rounded hover:bg-green-700">
-                                Cerrar RNC
-                            </button>
-                        </td>
-                    `;
-                    tableBody.appendChild(row);
-                });
-                
-            } catch (error) {
-                console.error("Error al cargar RNCs:", error);
-                showNotification("Error al cargar RNCs: " + error.message, 'error');
-            }
-        }
-
-        // --- Lógica de Formularios (POST) (v14 - Modificado) ---
-
-        // Paso 1: Cargar el checklist
-        async function handleLoadChecklist(e) {
-            e.preventDefault();
-            const supervisor = document.getElementById('insp-supervisor').value; // (v14)
-            const protocoloId = document.getElementById('insp-protocolo').value;
-            const area = document.getElementById('insp-area').value;
-            
-            if (!supervisor || !protocoloId || !area) {
-                showNotification("Por favor, complete Supervisor, Protocolo y Área.", 'error');
-                return;
-            }
-
-            // (v14) Guardamos el supervisor seleccionado
-            currentInspectionData = { protocoloId, area, supervisor: supervisor };
-            
-            const btn = e.target.querySelector('button[type="submit"]');
-            btn.disabled = true;
-            btn.innerHTML = '<span class="animate-spin mr-2">&#9696;</span> Cargando...';
-            
-            try {
-                const url = getCacheBustUrl(`${G_APP_SCRIPT_URL}?action=getChecklist&protocoloId=${protocoloId}`);
-                const response = await fetch(url);
-                const data = await response.json();
-                if (data.status !== 'success') throw new Error(data.message);
-                
-                currentChecklist = data.checklist;
-                const container = document.getElementById('checklist-items-container');
-                container.innerHTML = '';
-                
-                if (currentChecklist.length === 0) {
-                    container.innerHTML = '<p class="text-red-500">Error: No se encontraron ítems de checklist para este protocolo en la base de datos (Hoja: Biblioteca_Checklists).</p>';
-                    btn.disabled = false;
-                    btn.innerHTML = 'Cargar Checklist';
-                    return;
-                }
-                
-                currentChecklist.forEach((item, index) => {
-                    const itemHtml = `
-                        <div class="p-3 border rounded-md bg-gray-50">
-                            <label class="block text-sm font-medium text-gray-800">${item.item_descripcion}</label>
-                            <p class="text-xs text-gray-500 mb-2">Especificación: ${item.especificacion || 'N/A'}</p>
-                            <div class="flex space-x-4">
-                                <label class="flex items-center"><input type="radio" name="item-${index}" value="Aprobado" class="mr-1" required onchange="window.checkIfRejected()"> Aprobado</label>
-                                <label class="flex items-center"><input type="radio" name="item-${index}" value="Rechazado" class="mr-1" onchange="window.checkIfRejected()"> Rechazado</label>
-                                <label class="flex items-center"><input type="radio" name="item-${index}" value="N/A" class="mr-1" onchange="window.checkIfRejected()"> N/A</label>
-                            </div>
-                        </div>
-                    `;
-                    container.innerHTML += itemHtml;
-                });
-
-                document.getElementById('form-step-1').classList.add('hidden');
-                document.getElementById('form-step-2').classList.remove('hidden');
-                document.getElementById('checklist-title').textContent = protocoloId;
-
-            } catch (error) {
-                console.error("Error al cargar checklist:", error);
-                showNotification("Error al cargar checklist: " + error.message, 'error');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = 'Cargar Checklist';
-            }
-        }
-        
-        // Se llama cada vez que se marca un radio button
-        window.checkIfRejected = () => {
-            const form = document.getElementById('form-step-2');
-            const formData = new FormData(form);
-            let isRejected = false;
-            for (const [key, value] of formData.entries()) {
-                if (value === 'Rechazado') {
-                    isRejected = true;
-                    break;
-                }
-            }
-            
-            const rncContainer = document.getElementById('rnc-form-container');
-            const submitBtn = document.getElementById('submit-inspection-btn');
-            
-            if (isRejected) {
-                rncContainer.classList.remove('hidden');
-                submitBtn.textContent = 'Finalizar Inspección (Generar RNC)';
-                submitBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
-                submitBtn.classList.add('bg-red-600', 'hover:bg-red-700');
-            } else {
-                rncContainer.classList.add('hidden');
-                submitBtn.textContent = 'Finalizar Inspección (Aprobar)';
-                submitBtn.classList.add('bg-green-600', 'hover:bg-green-700');
-                submitBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
-            }
-        }
-        window.checkIfRejected = window.checkIfRejected;
-
-        // Paso 2: Guardar la inspección
-        async function handleSaveInspection(e) {
-            e.preventDefault();
-            const btn = e.target.querySelector('button[type="submit"]');
-            
-            const form = document.getElementById('form-step-2');
-            const formData = new FormData(form);
-            let isRejected = false;
-            let itemsResult = [];
-            let allAnswered = true;
-            
-            for (let i = 0; i < currentChecklist.length; i++) {
-                const resultado = formData.get(`item-${i}`);
-                if (!resultado) {
-                    allAnswered = false;
-                    break;
-                }
-                if (resultado === 'Rechazado') isRejected = true;
-                itemsResult.push({ item: currentChecklist[i].item_descripcion, resultado: resultado });
-            }
-
-            if (!allAnswered) {
-                 showNotification("Por favor, responda todos los ítems del checklist.", 'error');
-                 return;
-            }
-            
-            const payload = {
-                action: "saveInspeccion",
-                protocoloId: currentInspectionData.protocoloId,
-                area: currentInspectionData.area,
-                supervisor: currentInspectionData.supervisor, // (v14) Supervisor del dropdown
-                resultado: isRejected ? "Rechazado" : "Aprobado",
-                items: itemsResult,
-                rnc: {}
-            };
-
-            // 2. Si es Rechazado, recolectar datos de RNC
-            if (isRejected) {
-                const rncDefecto = document.getElementById('rnc-defecto').value;
-                const rncResponsable = document.getElementById('rnc-responsable').value;
-                const rncFotoInput = document.getElementById('rnc-foto');
-                
-                if (!rncDefecto || !rncResponsable) {
-                    showNotification("Si la inspección es Rechazada, debe llenar la descripción del defecto y el responsable.", 'error');
-                    return; 
-                }
-                
-                payload.rnc.defecto = rncDefecto;
-                payload.rnc.responsable = rncResponsable;
-                
-                if (rncFotoInput.files[0]) {
-                    showNotification("Procesando foto de evidencia...", 'info');
-                    payload.rnc.fileData = await fileToBase64(rncFotoInput.files[0]);
-                    payload.rnc.fileName = rncFotoInput.files[0].name;
-                    payload.rnc.fileType = rncFotoInput.files[0].type;
-                }
-            }
-
-            btn.disabled = true;
-            btn.innerHTML = '<span class="animate-spin mr-2">&#9696;</span> Guardando...';
-
-            try {
-                if (G_APP_SCRIPT_URL === "PEGUE_SU_URL_DE_APPS_SCRIPT_AQUI") {
-                    throw new Error("API URL no configurada.");
-                }
-
-                const response = await fetch(G_APP_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'cors',
-                    redirect: 'follow',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(payload) 
-                });
-                
-                const result = await response.json();
-                if (response.status !== 200 || result.status !== 'success') {
-                    throw new Error(result.message || 'Error en el servidor de Apps Script');
-                }
-
-                showNotification(isRejected ? "RNC generada con éxito." : "Inspección Aprobada con éxito.", 'success');
-                showView('dashboard'); 
-                
-            } catch (error) {
-                console.error("Error al guardar inspección:", error);
-                showNotification("Error al guardar: " + error.message, 'error');
-            } finally {
-                btn.disabled = false;
-                checkIfRejected(); 
-            }
-        }
-
-        // (v14) Cerrar RNC
-        async function closeRNC(buttonEl, rowIndex) {
-            // (v14) Obtener el supervisor actual del dropdown
-            const supervisorCierre = document.getElementById('insp-supervisor').value;
-            if (!supervisorCierre) {
-                showNotification("Error: Por favor, seleccione su nombre de supervisor en la pestaña 'Registrar Inspección' antes de cerrar una RNC.", 'error');
-                return;
-            }
-            
-            if (!confirm(`¿Está seguro de que desea CERRAR esta No Conformidad?\n\nSupervisor: ${supervisorCierre}`)) {
-                return;
-            }
-
-            buttonEl.disabled = true;
-            buttonEl.textContent = 'Cerrando...';
-            
-            try {
-                if (G_APP_SCRIPT_URL === "PEGUE_SU_URL_DE_APPS_SCRIPT_AQUI") {
-                    throw new Error("API URL no configurada.");
-                }
-
-                const payload = {
-                    action: "closeRNC",
-                    rowIndex: rowIndex, 
-                    supervisorCierre: supervisorCierre // (v14) Quién lo cerró
-                };
-                
-                const response = await fetch(G_APP_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'cors',
-                    redirect: 'follow',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(payload)
-                });
-                
-                const result = await response.json();
-                if (response.status !== 200 || result.status !== 'success') {
-                    throw new Error(result.message || 'Error en el servidor de Apps Script');
-                }
-                
-                showNotification("RNC cerrada con éxito.", 'success');
-                loadRNCs(); // Recargar la tabla del dashboard
-                
-            } catch (error) {
-                console.error("Error al cerrar RNC:", error);
-                showNotification("Error al cerrar RNC: " + error.message, 'error');
-                buttonEl.disabled = false;
-                buttonEl.textContent = 'Cerrar RNC';
-            }
-        }
-        window.closeRNC = closeRNC;
-        window.showView = showView;
-
-
-        // --- Event Listeners Globales ---
+        // Al cargar la página
         document.addEventListener('DOMContentLoaded', () => {
-            // (v14) Eliminado el 'setupAccessMode'
-            
-            if (G_APP_SCRIPT_URL === "PEGUE_SU_URL_DE_APPS_SCRIPT_AQUI") {
-                 if (window.location.protocol !== 'blob:') { // 'blob:' es el protocolo de la Vista Previa
-                    showNotification("Error: El aplicativo no está conectado. Configure la URL de la API.", 'error');
-                 } else {
-                     // Simulación para Vista Previa
-                    console.log("Modo Simulación: Cargando datos de prueba.");
-                    const selectUser = document.getElementById('insp-supervisor');
-                    selectUser.innerHTML = '<option value="Usuario de Prueba (Sim)">Usuario de Prueba (Sim)</option>';
-                    const selectProto = document.getElementById('insp-protocolo');
-                    selectProto.innerHTML = '<option value="PRO-SIM-001">Protocolo de Simulación</option>';
-                    const rncTable = document.getElementById('rnc-table-body');
-                    rncTable.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500">Modo simulación. Conecte API.</td></tr>';
-                 }
-            } else {
-                 // (v14) Cargar datos de la app
-                loadUsuarios();
-                loadProtocolos(); 
-                loadRNCs();
-            }
-            
-            // Listeners de Formularios
-            document.getElementById('form-step-1').addEventListener('submit', handleLoadChecklist);
-            document.getElementById('form-step-2').addEventListener('submit', handleSaveInspection);
-            document.getElementById('cancel-checklist-btn').addEventListener('click', () => showView('inspeccion'));
+            loadDashboard();
+            loadDropdowns();
         });
 
+        // --- NAVEGACIÓN ---
+        function switchTab(tab) {
+            document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
+            document.getElementById('view-' + tab).style.display = 'block';
+            
+            // Estilos de pestañas
+            const tabDash = document.getElementById('tab-dashboard');
+            const tabInsp = document.getElementById('tab-inspection');
+            
+            if(tab === 'dashboard') {
+                tabDash.className = "flex-1 py-4 px-6 text-center bg-blue-50 text-blue-700 font-bold border-b-2 border-blue-700 transition-colors";
+                tabInsp.className = "flex-1 py-4 px-6 text-center text-gray-600 hover:bg-gray-50 border-b-2 border-transparent transition-colors";
+                loadDashboard();
+            } else {
+                tabInsp.className = "flex-1 py-4 px-6 text-center bg-blue-50 text-blue-700 font-bold border-b-2 border-blue-700 transition-colors";
+                tabDash.className = "flex-1 py-4 px-6 text-center text-gray-600 hover:bg-gray-50 border-b-2 border-transparent transition-colors";
+                cancelInspection(); // Resetear formulario al entrar
+            }
+        }
+
+        // --- CARGA DE DATOS ---
+        function loadDropdowns() {
+            // 1. Cargar Supervisores (Usuarios)
+            fetch(`${API_URL}?action=getUsuarios`)
+                .then(r => r.json())
+                .then(res => {
+                    if(res.status === 'success') {
+                        const sel = document.getElementById('input-supervisor');
+                        sel.innerHTML = '<option value="">Seleccione su nombre...</option>';
+                        res.usuarios.forEach(u => sel.innerHTML += `<option value="${u}">${u}</option>`);
+                    }
+                })
+                .catch(e => showNotify("Error cargando usuarios", "error"));
+
+            // 2. Cargar Protocolos
+            fetch(`${API_URL}?action=getProtocolos`)
+                .then(r => r.json())
+                .then(res => {
+                    if(res.status === 'success') {
+                        const sel = document.getElementById('input-protocolo');
+                        sel.innerHTML = '<option value="">Seleccione un protocolo...</option>';
+                        res.protocolos.forEach(p => sel.innerHTML += `<option value="${p.protocolo_id}">${p.nombre_protocolo}</option>`);
+                    }
+                });
+        }
+
+        function loadDashboard() {
+            const tbody = document.getElementById('table-rncs');
+            tbody.innerHTML = '<tr><td colspan="6" class="py-4 text-center">Actualizando...</td></tr>';
+            
+            fetch(`${API_URL}?action=getRNCs&bust=${new Date().getTime()}`)
+                .then(r => r.json())
+                .then(res => {
+                    tbody.innerHTML = '';
+                    if(res.rncs.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-gray-500">¡Todo en orden! No hay RNCs abiertas.</td></tr>';
+                        return;
+                    }
+                    res.rncs.forEach(item => {
+                        const link = item.foto_url ? `<a href="${item.foto_url}" target="_blank" class="text-blue-500 underline">Ver</a>` : '-';
+                        tbody.innerHTML += `
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="py-3 px-4">${item.fecha_hora.split(',')[0]}</td>
+                                <td class="py-3 px-4 font-medium">${item.supervisor}</td>
+                                <td class="py-3 px-4">${item.area}</td>
+                                <td class="py-3 px-4 text-red-600">${item.defecto}</td>
+                                <td class="py-3 px-4 text-center">${link}</td>
+                                <td class="py-3 px-4 text-center">
+                                    <button onclick="cerrarRNC(${item.rowIndex})" class="bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded hover:bg-green-200">Cerrar</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                });
+        }
+
+        // --- LOGICA INSPECCIÓN ---
+        function loadChecklist() {
+            const proto = document.getElementById('input-protocolo').value;
+            const superv = document.getElementById('input-supervisor').value;
+            const area = document.getElementById('input-area').value;
+
+            if(!proto || !superv || !area) {
+                showNotify("Debe seleccionar Supervisor, Protocolo y Área", "error");
+                return;
+            }
+
+            document.getElementById('step-1').classList.add('hidden');
+            document.getElementById('step-2').classList.remove('hidden');
+            
+            fetch(`${API_URL}?action=getChecklist&protocoloId=${proto}`)
+                .then(r => r.json())
+                .then(res => {
+                    const cont = document.getElementById('checklist-container');
+                    cont.innerHTML = '';
+                    currentChecklist = res.checklist;
+                    res.checklist.forEach((item, idx) => {
+                        cont.innerHTML += `
+                            <div class="bg-gray-50 p-3 rounded border">
+                                <p class="font-bold text-gray-800">${item.item_descripcion}</p>
+                                <p class="text-xs text-gray-500 mb-2">${item.especificacion}</p>
+                                <div class="flex gap-4">
+                                    <label><input type="radio" name="chk_${idx}" value="OK" onchange="checkStatus()" required> Aprobado</label>
+                                    <label><input type="radio" name="chk_${idx}" value="NOK" onchange="checkStatus()"> Rechazado</label>
+                                    <label><input type="radio" name="chk_${idx}" value="NA" onchange="checkStatus()"> N/A</label>
+                                </div>
+                            </div>
+                        `;
+                    });
+                });
+        }
+
+        function checkStatus() {
+            const inputs = document.querySelectorAll('input[type="radio"]:checked');
+            let hasFail = false;
+            inputs.forEach(inp => {
+                if(inp.value === 'NOK') hasFail = true;
+            });
+            
+            const panel = document.getElementById('panel-rnc');
+            if(hasFail) {
+                panel.classList.remove('hidden');
+                isRNC = true;
+            } else {
+                panel.classList.add('hidden');
+                isRNC = false;
+            }
+        }
+
+        function submitInspection() {
+            const btn = document.getElementById('btn-save');
+            btn.disabled = true;
+            btn.innerText = "Guardando...";
+
+            // Validar RNC si aplica
+            if(isRNC) {
+                if(!document.getElementById('input-defecto').value) {
+                    showNotify("Debe describir el defecto", "error");
+                    btn.disabled = false; btn.innerText = "Guardar Inspección";
+                    return;
+                }
+            }
+
+            // Preparar datos
+            const items = [];
+            currentChecklist.forEach((c, idx) => {
+                const val = document.querySelector(`input[name="chk_${idx}"]:checked`)?.value || "-";
+                items.push({item: c.item_descripcion, res: val});
+            });
+
+            // Preparar archivo
+            const fileInput = document.getElementById('input-foto');
+            const reader = new FileReader();
+            
+            const sendData = (fileData = null) => {
+                const payload = {
+                    action: "saveInspeccion",
+                    supervisor: document.getElementById('input-supervisor').value,
+                    protocoloId: document.getElementById('input-protocolo').value,
+                    area: document.getElementById('input-area').value,
+                    resultado: isRNC ? "Rechazado" : "Aprobado",
+                    items: items,
+                    rnc: isRNC ? {
+                        defecto: document.getElementById('input-defecto').value,
+                        responsable: document.getElementById('input-responsable').value,
+                        fileData: fileData ? fileData.split(',')[1] : null,
+                        fileName: fileData ? fileInput.files[0].name : null,
+                        fileType: fileData ? fileInput.files[0].type : null
+                    } : {}
+                };
+
+                fetch(API_URL, {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                })
+                .then(r => r.json())
+                .then(res => {
+                    if(res.status === 'success') {
+                        showNotify("Guardado Correctamente", "success");
+                        setTimeout(() => location.reload(), 2000);
+                    } else {
+                        showNotify("Error: " + res.message, "error");
+                        btn.disabled = false;
+                    }
+                });
+            };
+
+            if(isRNC && fileInput.files.length > 0) {
+                reader.onload = () => sendData(reader.result);
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                sendData(null);
+            }
+        }
+
+        // Función Cerrar RNC (Corregida)
+        function cerrarRNC(rowIndex) {
+            const supervisor = prompt("Para cerrar, ingrese su nombre (Supervisor):");
+            if(!supervisor) return;
+
+            fetch(API_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: "closeRNC",
+                    rowIndex: rowIndex,
+                    supervisorCierre: supervisor
+                })
+            })
+            .then(r => r.json())
+            .then(res => {
+                if(res.status === 'success') {
+                    showNotify("RNC Cerrada", "success");
+                    loadDashboard();
+                } else {
+                    showNotify("Error", "error");
+                }
+            });
+        }
+
+        function showNotify(msg, type) {
+            const el = document.getElementById('notification');
+            el.innerText = msg;
+            el.className = `fixed top-4 right-4 px-6 py-4 rounded shadow-lg text-white font-bold z-50 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 3000);
+        }
+
+        function cancelInspection() {
+            location.reload();
+        }
     </script>
 </body>
 </html>
