@@ -10,22 +10,83 @@
         /* Estilo simple para el spinner */
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .animate-spin { display: inline-block; animation: spin 1s linear infinite; }
-        /* Ocultar vistas por defecto */
+        
+        /* MODIFICADO v12: Ocultar vistas, mostrar LOGIN por defecto */
         .view { display: none; }
-        #view-dashboard { display: block; } /* Mostrar Dashboard al inicio */
+        #view-login { display: block; }
+        
+        /* (Bug 3) Mejoras visuales en el formulario */
+        fieldset {
+            border-top: 1px solid #e5e7eb; /* Divisor */
+            padding-top: 1.5rem; /* Espacio */
+            margin-top: 1.5rem; /* Espacio */
+        }
+        fieldset:first-of-type {
+            border-top: none; /* Sin borde en el primero */
+            margin-top: 0;
+            padding-top: 0;
+        }
     </style>
 </head>
 <body class="bg-gray-100 font-sans" id="app-body">
 
-    <div class="container mx-auto p-4 md:p-8">
-        <!-- Cabecera -->
-        <header class="mb-6">
-            <h1 class="text-3xl font-bold text-blue-900">Sistema de Gestión de Calidad en Obra (SGCO)</h1>
-            <p class="text-xl text-gray-600">Proyecto: Hospital de Segundo Nivel Isaías</p>
-        </header>
+    <!-- Notificador de Estado Global -->
+    <div id="upload-status" class="hidden fixed top-4 right-4 z-50 p-3 text-center text-sm text-white rounded-md shadow-lg transition-all duration-300"></div>
 
-        <!-- Notificador de Estado -->
-        <div id="upload-status" class="hidden mb-4 p-3 text-center text-sm text-white rounded-md shadow-lg transition-all duration-300"></div>
+    <!-- VISTA 0: LOGIN (NUEVO v12) -->
+    <div id="view-login" class="view min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full space-y-8 bg-white p-10 rounded-lg shadow-lg">
+            <div>
+                <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                    SGCO
+                </h2>
+                <p class="mt-2 text-center text-sm text-gray-600">
+                    Sistema de Gestión de Calidad en Obra
+                </p>
+            </div>
+            <form id="form-login" class="mt-8 space-y-6">
+                <input type="hidden" name="remember" value="true">
+                <div class="rounded-md shadow-sm -space-y-px">
+                    <div>
+                        <label for="login-usuario" class="sr-only">Usuario</label>
+                        <input id="login-usuario" name="usuario" type="text" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" placeholder="Usuario">
+                    </div>
+                    <div>
+                        <label for="login-password" class="sr-only">Contraseña</label>
+                        <input id="login-password" name="password" type="password" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" placeholder="Contraseña">
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit" id="login-submit-btn" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                            <svg class="h-5 w-5 text-blue-500 group-hover:text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                            </svg>
+                        </span>
+                        Ingresar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Contenedor Principal (Oculto hasta el login) -->
+    <div id="view-main-app" class="view container mx-auto p-4 md:p-8">
+        <!-- Cabecera -->
+        <header class="mb-6 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-blue-900">Sistema de Gestión de Calidad en Obra (SGCO)</h1>
+                <p class="text-xl text-gray-600">Proyecto: Hospital de Segundo Nivel Isaías</p>
+            </div>
+            <!-- Info del Usuario Logueado (v12) -->
+            <div class="text-right">
+                <p class="text-sm text-gray-700">Usuario: <strong id="user-display-name">N/A</strong></p>
+                <p class="text-sm text-gray-500">Rol: <strong id="user-display-rol">N/A</strong></p>
+                <button onclick="window.appLogout()" class="text-xs text-red-500 hover:underline">Cerrar Sesión</button>
+            </div>
+        </header>
 
         <!-- Navegación de Pestañas (Vistas) -->
         <div class="border-b border-gray-300 mb-6">
@@ -40,7 +101,7 @@
         </div>
 
         <!-- VISTA 1: DASHBOARD DE RNCs ABIERTAS -->
-        <div id="view-dashboard" class="view">
+        <div id="view-dashboard" class="view-app" style="display: block;"> <!-- Se muestra por defecto post-login -->
             <section>
                 <h2 class="text-xl font-semibold text-gray-800 mb-3">Reporte de No Conformidades (RNCs) Abiertas</h2>
                 <div class="bg-white shadow-lg rounded-lg overflow-hidden">
@@ -49,6 +110,7 @@
                             <thead class="bg-gray-100">
                                 <tr>
                                     <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Fecha</th>
+                                    <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Supervisor</th> <!-- (v12) Quién la creó -->
                                     <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Protocolo</th>
                                     <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Área</th>
                                     <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Defecto</th>
@@ -67,26 +129,27 @@
         </div>
 
         <!-- VISTA 2: FORMULARIO DE NUEVA INSPECCIÓN -->
-        <div id="view-inspeccion" class="view">
+        <div id="view-inspeccion" class="view-app" style="display: none;"> <!-- Oculto por defecto -->
             <div class="bg-white p-6 rounded-lg shadow-lg">
                 
                 <!-- Paso 1: Seleccionar Protocolo -->
                 <form id="form-step-1" class="space-y-4">
                     <h2 class="text-xl font-semibold text-gray-800">Paso 1: Iniciar Inspección</h2>
-                    <div>
-                        <label for="insp-protocolo" class="block text-sm font-medium text-gray-700">Seleccione el Protocolo a Inspeccionar</label>
-                        <select id="insp-protocolo" name="insp-protocolo" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                            <option value="">Cargando protocolos...</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="insp-area" class="block text-sm font-medium text-gray-700">Área / Sector de Inspección</label>
-                        <input type="text" id="insp-area" name="insp-area" placeholder="Ej: Bloque B, Piso 2, Eje 4-5" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label for="insp-supervisor" class="block text-sm font-medium text-gray-700">Nombre del Supervisor (Inspector)</label>
-                        <input type="text" id="insp-supervisor" name="insp-supervisor" placeholder="Ej: Ing. Juan Perez" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                    </div>
+                    <fieldset class="space-y-4" style="border-top: none; margin-top: 0; padding-top: 0;">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="insp-protocolo" class="block text-sm font-medium text-gray-700">Seleccione el Protocolo a Inspeccionar</label>
+                                <select id="insp-protocolo" name="insp-protocolo" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <option value="">Cargando protocolos...</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="insp-area" class="block text-sm font-medium text-gray-700">Área / Sector de Inspección</label>
+                                <input type="text" id="insp-area" name="insp-area" placeholder="Ej: Bloque B, Piso 2, Eje 4-5" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            </div>
+                        </div>
+                        <!-- (v12) CAMPO DE SUPERVISOR ELIMINADO. Se toma del login. -->
+                    </fieldset>
                     <div class="text-right">
                         <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-blue-700">
                             Cargar Checklist
@@ -96,29 +159,33 @@
 
                 <!-- Paso 2: Ejecutar Checklist (Oculto) -->
                 <form id="form-step-2" class="space-y-6 hidden">
-                    <h2 class="text-xl font-semibold text-gray-800">Paso 2: Ejecutar Checklist para <span id="checklist-title" class="text-blue-700"></span></h2>
-                    <div id="checklist-items-container" class="space-y-3">
-                        <!-- Items de checklist generados por JS -->
-                    </div>
+                    <fieldset>
+                        <legend class="text-xl font-semibold text-gray-800">Paso 2: Ejecutar Checklist para <span id="checklist-title" class="text-blue-700"></span></legend>
+                        <div id="checklist-items-container" class="space-y-3 mt-4">
+                            <!-- Items de checklist generados por JS -->
+                        </div>
+                    </fieldset>
                     
                     <!-- Paso 3: Formulario RNC (Oculto, solo aparece si algo es Rechazado) -->
-                    <div id="rnc-form-container" class="hidden mt-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
-                        <h3 class="text-lg font-bold text-red-800">¡Inspección RECHAZADA!</h3>
-                        <p class="text-red-700">Se requiere una No Conformidad (RNC) para los ítems rechazados.</p>
-                        <div class="space-y-3 mt-4">
-                            <div>
-                                <label for="rnc-defecto" class="block text-sm font-medium text-gray-700">Descripción del Defecto (Resumido)</label>
-                                <textarea id="rnc-defecto" name="rnc-defecto" rows="3" placeholder="Ej: Estribos en Viga V-102 con separación de 25cm en lugar de 15cm." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></textarea>
+                    <div id="rnc-form-container" class="hidden">
+                        <fieldset class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+                            <legend class="text-lg font-bold text-red-800">¡Inspección RECHAZADA!</legend>
+                            <p class="text-red-700">Se requiere una No Conformidad (RNC) para los ítems rechazados.</p>
+                            <div class="space-y-3 mt-4">
+                                <div>
+                                    <label for="rnc-defecto" class="block text-sm font-medium text-gray-700">Descripción del Defecto (Resumido)</label>
+                                    <textarea id="rnc-defecto" name="rnc-defecto" rows="3" placeholder="Ej: Estribos en Viga V-102 con separación de 25cm en lugar de 15cm." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></textarea>
+                                </div>
+                                <div>
+                                    <label for="rnc-responsable" class="block text-sm font-medium text-gray-700">Responsable de la Corrección</label>
+                                    <input type="text" id="rnc-responsable" name="rnc-responsable" placeholder="Ej: Contratista Z&Z" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                </div>
+                                <div>
+                                    <label for="rnc-foto" class="block text-sm font-medium text-gray-700">Evidencia (Foto del Defecto)</label>
+                                    <input type="file" id="rnc-foto" name="rnc-foto" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:font-semibold file:bg-red-100 file:text-red-700 hover:file:bg-red-200">
+                                </div>
                             </div>
-                            <div>
-                                <label for="rnc-responsable" class="block text-sm font-medium text-gray-700">Responsable de la Corrección</label>
-                                <input type="text" id="rnc-responsable" name="rnc-responsable" placeholder="Ej: Contratista Z&Z" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                            </div>
-                            <div>
-                                <label for="rnc-foto" class="block text-sm font-medium text-gray-700">Evidencia (Foto del Defecto)</label>
-                                <input type="file" id="rnc-foto" name="rnc-foto" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:font-semibold file:bg-red-100 file:text-red-700 hover:file:bg-red-200">
-                            </div>
-                        </div>
+                        </fieldset>
                     </div>
 
                     <!-- Botones Finales -->
@@ -129,7 +196,6 @@
                         </button>
                     </div>
                 </form>
-
             </div>
         </div>
 
@@ -137,20 +203,22 @@
         <footer class="mt-12 pt-6 border-t border-gray-300 text-center text-sm text-gray-500">
             <p>
                 Desarrollado por Zacarias Ortega para el Proyecto Construcción Hospital de Segundo Nivel Isaías - Oruro
-            </l>
+            </p>
         </footer>
     </div>
 
-    <!-- Script principal del aplicativo (v1.0 - Calidad con Google Sheets) -->
+    <!-- Script principal del aplicativo (v12 - Con Login) -->
     <script>
         // -----------------------------------------------------------------
-        // SCRIPT v1.0: LÓGICA DEL APLICATIVO DE CALIDAD
+        // SCRIPT v12: LÓGICA DEL APLICATIVO DE CALIDAD
         // -----------------------------------------------------------------
 
         // ¡¡¡IMPORTANTE!!! Usted deberá pegar aquí la URL de su API de Google Apps Script
-        const G_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz6dKnjs_wiOGKruFFIQbrcZbibA4tUxWJLDZyfRJ9TK40MmGU9b-x6HR_6AL7ApH5gGg/exec";
+        const G_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwf8905psxBJVEIoBDR_S9okVC16u3bEGhuzHrrk1GEdvfW0OILtzOfGzeVbTgIoa_7-w/exec";
 
-        // Variables globales
+        // (v12) Variable global para guardar los datos del usuario logueado
+        let loggedInUser = null; 
+        
         let currentProtocolos = [];
         let currentChecklist = [];
         let currentInspectionData = {};
@@ -168,37 +236,46 @@
             setTimeout(() => statusEl.classList.add('hidden'), 4000);
         }
         
-        // Convertir archivo a Base64
         function fileToBase64(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result.split(',')[1]); // Solo la data Base64
+                reader.onload = () => resolve(reader.result.split(',')[1]);
                 reader.onerror = error => reject(error);
             });
         }
         
-        // Romper la caché de Google Apps Script
+        // (v11) Romper la caché de Google Apps Script
         function getCacheBustUrl(url) {
             const cacheBust = new Date().getTime();
-            // Comprueba si la URL ya tiene parámetros
             const separator = url.includes('?') ? '&' : '?';
             return `${url}${separator}cacheBust=${cacheBust}`;
         }
 
-        // --- Control de Vistas ---
+        // --- Control de Vistas (v12 - Modificado para Login) ---
         function showView(viewName) {
+            // Ocultar todas las vistas principales
             document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
-            document.getElementById(`view-${viewName}`).style.display = 'block';
-            
-            document.querySelectorAll('nav button').forEach(b => {
-                b.classList.remove('text-blue-600', 'border-blue-600');
-                b.classList.add('text-gray-600', 'border-transparent');
-            });
-            document.getElementById(`btn-tab-${viewName}`).classList.add('text-blue-600', 'border-blue-600');
 
-            if (viewName === 'dashboard') loadRNCs();
-            if (viewName === 'inspeccion') resetFormStep1();
+            if (viewName === 'login') {
+                document.getElementById('view-login').style.display = 'block';
+            } else {
+                // Si es cualquier otra vista, mostrar el contenedor principal
+                document.getElementById('view-main-app').style.display = 'block';
+                
+                // Y luego manejar las pestañas internas
+                document.querySelectorAll('.view-app').forEach(v => v.style.display = 'none');
+                document.getElementById(`view-${viewName}`).style.display = 'block';
+                
+                document.querySelectorAll('nav button').forEach(b => {
+                    b.classList.remove('text-blue-600', 'border-blue-600');
+                    b.classList.add('text-gray-600', 'border-transparent');
+                });
+                document.getElementById(`btn-tab-${viewName}`).classList.add('text-blue-600', 'border-blue-600');
+
+                if (viewName === 'dashboard') loadRNCs();
+                if (viewName === 'inspeccion') resetFormStep1();
+            }
         }
         
         function resetFormStep1() {
@@ -210,17 +287,77 @@
             currentInspectionData = {};
         }
 
+        // --- Lógica de Login (NUEVO v12) ---
+        async function handleLogin(e) {
+            e.preventDefault();
+            const form = e.target;
+            const btn = form.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="animate-spin mr-2">&#9696;</span> Ingresando...';
+            
+            try {
+                if (G_APP_SCRIPT_URL === "PEGUE_SU_URL_DE_APPS_SCRIPT_AQUI") {
+                    if (window.location.protocol === 'blob:') {
+                        // Simulación para Vista Previa
+                        loggedInUser = { nombre_completo: "Usuario de Prueba", rol: "Admin" };
+                        showNotification("Modo simulación: Ingreso exitoso.", "success");
+                    } else {
+                        throw new Error("API URL no está configurada.");
+                    }
+                } else {
+                    const payload = {
+                        action: "checkLogin",
+                        usuario: form.usuario.value,
+                        contrasena: form.password.value
+                    };
+                    
+                    const response = await fetch(G_APP_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'cors',
+                        redirect: 'follow',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    const result = await response.json();
+                    if (response.status !== 200 || result.status !== 'success') {
+                        throw new Error(result.message || 'Error en el servidor');
+                    }
+                    
+                    // ¡ÉXITO! Guardamos al usuario
+                    loggedInUser = result.user;
+                }
+
+                document.getElementById('user-display-name').textContent = loggedInUser.nombre_completo;
+                document.getElementById('user-display-rol').textContent = loggedInUser.rol;
+                
+                // Cargamos la app principal
+                showView('dashboard'); // Mostrar el dashboard
+                loadProtocolos(); // Cargar los protocolos en segundo plano
+                
+            } catch (error) {
+                console.error("Error al iniciar sesión:", error);
+                showNotification("Error: " + error.message, 'error');
+                btn.disabled = false;
+                btn.innerHTML = 'Ingresar';
+            }
+        }
+        
+        function appLogout() {
+            loggedInUser = null;
+            document.getElementById('form-login').reset();
+            showView('login');
+            showNotification("Sesión cerrada con éxito.", 'success');
+        }
+        window.appLogout = appLogout; // Exponer al global
+
+
         // --- Lógica de Carga de Datos (GET) ---
 
         async function loadProtocolos() {
             try {
-                if (G_APP_SCRIPT_URL === "PEGUE_SU_URL_DE_APPS_SCRIPT_AQUI") {
-                    if (window.location.protocol === 'blob:') {
-                         document.getElementById('insp-protocolo').innerHTML = '<option value="">Modo Simulación: Conecte API</option>';
-                         return;
-                    }
-                    throw new Error("API URL no configurada.");
-                }
+                if (G_APP_SCRIPT_URL === "PEGUE_SU_URL_DE_APPS_SCRIPT_AQUI") { return; } // No cargar si no hay API
+
                 const url = getCacheBustUrl(`${G_APP_SCRIPT_URL}?action=getProtocolos`);
                 const response = await fetch(url);
                 const data = await response.json();
@@ -230,7 +367,6 @@
                 const select = document.getElementById('insp-protocolo');
                 select.innerHTML = '<option value="">Seleccione un protocolo...</option>';
                 
-                // Asegurarse de que el protocolo_id y nombre_protocolo existan en los datos
                 if(currentProtocolos.length > 0 && !currentProtocolos[0].protocolo_id) {
                     console.warn("Datos de protocolo recibidos, pero faltan cabeceras 'protocolo_id' o 'nombre_protocolo' en el Google Sheet 'Biblioteca_Protocolos'.");
                     showNotification("Error: Revise las cabeceras en su Google Sheet 'Biblioteca_Protocolos'.", 'error');
@@ -251,15 +387,16 @@
 
         async function loadRNCs() {
             const tableBody = document.getElementById('rnc-table-body');
-            tableBody.innerHTML = '<tr><td colspan="7" class="p-4 text-center">Cargando RNCs abiertas...</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="8" class="p-4 text-center">Cargando RNCs abiertas...</td></tr>';
             try {
                 if (G_APP_SCRIPT_URL === "PEGUE_SU_URL_DE_APPS_SCRIPT_AQUI") {
                     if (window.location.protocol === 'blob:') {
-                         tableBody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">Modo simulación. Conecte API.</td></tr>';
+                         tableBody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500">Modo simulación. Conecte API.</td></tr>';
                          return;
                     }
                     throw new Error("API URL no configurada.");
                 }
+
                 const url = getCacheBustUrl(`${G_APP_SCRIPT_URL}?action=getRNCs`);
                 const response = await fetch(url);
                 const data = await response.json();
@@ -267,21 +404,24 @@
                 
                 tableBody.innerHTML = '';
                 if (data.rncs.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">¡Felicidades! No hay No Conformidades abiertas.</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500">¡Felicidades! No hay No Conformidades abiertas.</td></tr>';
                 }
                 
                 data.rncs.forEach(rnc => {
                     const row = document.createElement('tr');
                     const fotoHtml = rnc.foto_url ? `<a href="${rnc.foto_url}" target="_blank" class="text-blue-600 hover:underline">Ver Foto</a>` : 'No/Disp';
+                                        
                     row.innerHTML = `
                         <td class="p-3 text-sm text-gray-700">${rnc.fecha_hora}</td>
+                        <td class="p-3 text-sm text-gray-700">${rnc.supervisor}</td> <!-- (v12) Quién la creó -->
                         <td class="p-3 text-sm text-gray-700">${rnc.protocolo_id}</td>
                         <td class="p-3 text-sm text-gray-700">${rnc.area}</td>
                         <td class="p-3 text-sm text-red-700">${rnc.defecto}</td>
                         <td class="p-3 text-sm text-gray-700">${rnc.responsable}</td>
                         <td class="p-3 text-sm text-center">${fotoHtml}</td>
                         <td class="p-3 text-sm text-center">
-                            <button onclick="window.closeRNC(this, '${rnc.fecha_hora}', '${rnc.defecto}')" class="bg-green-600 text-white text-xs font-bold py-1 px-2 rounded hover:bg-green-700">
+                            <!-- (v12) Bug corregido: Pasa el row_index -->
+                            <button onclick="window.closeRNC(this, ${rnc.row_index})" class="bg-green-600 text-white text-xs font-bold py-1 px-2 rounded hover:bg-green-700">
                                 Cerrar RNC
                             </button>
                         </td>
@@ -302,14 +442,14 @@
             e.preventDefault();
             const protocoloId = document.getElementById('insp-protocolo').value;
             const area = document.getElementById('insp-area').value;
-            const supervisor = document.getElementById('insp-supervisor').value;
             
-            if (!protocoloId || !area || !supervisor) {
-                showNotification("Por favor, complete todos los campos del Paso 1.", 'error');
+            if (!protocoloId || !area) {
+                showNotification("Por favor, complete Protocolo y Área.", 'error');
                 return;
             }
 
-            currentInspectionData = { protocoloId, area, supervisor };
+            // (v12) El supervisor se toma del login
+            currentInspectionData = { protocoloId, area, supervisor: loggedInUser.nombre_completo };
             
             const btn = e.target.querySelector('button[type="submit"]');
             btn.disabled = true;
@@ -420,7 +560,7 @@
                 action: "saveInspeccion",
                 protocoloId: currentInspectionData.protocoloId,
                 area: currentInspectionData.area,
-                supervisor: currentInspectionData.supervisor,
+                supervisor: loggedInUser.nombre_completo, // (v12) Supervisor logueado
                 resultado: isRejected ? "Rechazado" : "Aprobado",
                 items: itemsResult,
                 rnc: {}
@@ -462,7 +602,8 @@
                     mode: 'cors',
                     redirect: 'follow',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(payload)
+                    // (v12) El login no necesita contraseña, ya está logueado
+                    body: JSON.stringify(payload) 
                 });
                 
                 const result = await response.json();
@@ -471,7 +612,7 @@
                 }
 
                 showNotification(isRejected ? "RNC generada con éxito." : "Inspección Aprobada con éxito.", 'success');
-                showView('dashboard'); // Volver al dashboard (que ahora mostrará la nueva RNC)
+                showView('dashboard'); // Volver al dashboard
                 
             } catch (error) {
                 console.error("Error al guardar inspección:", error);
@@ -482,12 +623,9 @@
             }
         }
 
-        // Cerrar una RNC
-        async function closeRNC(buttonEl, fecha_hora, defecto) {
-            // Re-codificar el defecto por si tiene caracteres especiales
-            const safeDefecto = encodeURIComponent(defecto);
-            
-            if (!confirm(`¿Está seguro de que desea CERRAR esta No Conformidad?\n\nDefecto: ${decodeURIComponent(safeDefecto)}`)) {
+        // (v12) Bug Corregido: Ahora usa rowIndex
+        async function closeRNC(buttonEl, rowIndex) {
+            if (!confirm(`¿Está seguro de que desea CERRAR esta No Conformidad?`)) {
                 return;
             }
 
@@ -501,8 +639,8 @@
 
                 const payload = {
                     action: "closeRNC",
-                    fecha_hora: fecha_hora, // Usamos la fecha y el defecto como un "ID" compuesto
-                    defecto: decodeURIComponent(safeDefecto)
+                    rowIndex: rowIndex, // <-- (v12) ID Confiable
+                    supervisorCierre: loggedInUser.nombre_completo // (v12) Quién lo cerró
                 };
                 
                 const response = await fetch(G_APP_SCRIPT_URL, {
@@ -529,23 +667,21 @@
             }
         }
         // Exponer la función al scope global
-        window.closeRNC = (el, fecha, defecto) => closeRNC(el, fecha, encodeURIComponent(defecto));
+        window.closeRNC = closeRNC;
         window.showView = showView;
 
 
         // --- Event Listeners Globales ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Configuración inicial
+            // (v12) Configuración inicial
             if (G_APP_SCRIPT_URL === "PEGUE_SU_URL_DE_APPS_SCRIPT_AQUI") {
                  if (window.location.protocol !== 'blob:') {
                     showNotification("Error: El aplicativo no está conectado. Configure la URL de la API.", 'error');
                  }
-            } else {
-                loadProtocolos(); // Cargar la lista de protocolos para el formulario
-                loadRNCs(); // Cargar el dashboard
             }
             
             // Listeners de Formularios
+            document.getElementById('form-login').addEventListener('submit', handleLogin);
             document.getElementById('form-step-1').addEventListener('submit', handleLoadChecklist);
             document.getElementById('form-step-2').addEventListener('submit', handleSaveInspection);
             document.getElementById('cancel-checklist-btn').addEventListener('click', () => showView('inspeccion'));
