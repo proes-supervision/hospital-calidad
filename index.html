@@ -625,7 +625,13 @@
 
         // (v12) Bug Corregido: Ahora usa rowIndex
         async function closeRNC(buttonEl, rowIndex) {
-            if (!confirm(`¿Está seguro de que desea CERRAR esta No Conformidad?`)) {
+            // (v12) Verificar que el usuario esté logueado
+            if (!loggedInUser) {
+                showNotification("Error: Por favor, inicie sesión de nuevo.", 'error');
+                return;
+            }
+            
+            if (!confirm(`¿Está seguro de que desea CERRAR esta No Conformidad?\n\nSupervisor: ${loggedInUser.nombre_completo}`)) {
                 return;
             }
 
@@ -675,7 +681,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             // (v12) Configuración inicial
             if (G_APP_SCRIPT_URL === "PEGUE_SU_URL_DE_APPS_SCRIPT_AQUI") {
-                 if (window.location.protocol !== 'blob:') {
+                 if (window.location.protocol !== 'blob:') { // 'blob:' es el protocolo de la Vista Previa
                     showNotification("Error: El aplicativo no está conectado. Configure la URL de la API.", 'error');
                  }
             }
