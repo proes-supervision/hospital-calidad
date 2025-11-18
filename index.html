@@ -36,7 +36,7 @@
                     <p class="text-gray-500 font-medium">Supervisión Hospital de Segundo Nivel Isaías</p>
                 </div>
                 <div class="hidden md:block text-right">
-                    <div class="text-xs font-bold text-blue-900 bg-blue-100 px-3 py-1 rounded-full uppercase tracking-wide">v15.0 Online</div>
+                    <div class="text-xs font-bold text-blue-900 bg-blue-100 px-3 py-1 rounded-full uppercase tracking-wide">v16.0 Anti-Crash</div>
                 </div>
             </div>
         </header>
@@ -88,7 +88,7 @@
                 </div>
                 
                 <div class="p-8">
-                    <!-- PASO 1: Datos Generales -->
+                    <!-- PASO 1: Configuración -->
                     <div id="step-1">
                         <div class="mb-6 pb-2 border-b border-gray-200">
                             <h3 class="text-lg font-bold text-gray-800">1. Datos Generales</h3>
@@ -220,7 +220,14 @@
         }
 
         function loadDropdowns() {
-            // Intenta cargar, pero no bloquea la app si falla
+            if (API_URL === "PEGUE_SU_URL_EXEC_AQUI") {
+                 showNotify("ERROR: La URL de la API NO está configurada.", "error");
+                 document.getElementById('input-supervisor').innerHTML = '<option value="">ERROR: Configuración</option>';
+                 document.getElementById('input-protocolo').innerHTML = '<option value="">ERROR: Configuración</option>';
+                 return;
+            }
+            
+            // 1. Cargar Supervisores (Usuarios)
             fetch(`${API_URL}?action=getUsuarios`)
                 .then(r => r.json())
                 .then(res => {
@@ -233,8 +240,12 @@
                         showNotify("Error API: " + res.message, "error");
                     }
                 })
-                .catch(e => console.log("Esperando conexión API...")); // Fail silently to not freeze UI
+                .catch(e => {
+                    document.getElementById('input-supervisor').innerHTML = '<option value="">Error de conexión</option>';
+                    showNotify("Error: No se pudo contactar al servidor de la API.", "error");
+                });
 
+            // 2. Cargar Protocolos
             fetch(`${API_URL}?action=getProtocolos`)
                 .then(r => r.json())
                 .then(res => {
@@ -242,15 +253,22 @@
                     if(res.status === 'success') {
                         sel.innerHTML = '<option value="">Seleccione un protocolo...</option>';
                         res.protocolos.forEach(p => sel.innerHTML += `<option value="${p.protocolo_id}">${p.nombre_protocolo}</option>`);
+                    } else {
+                        document.getElementById('input-protocolo').innerHTML = '<option value="">Error cargando protocolos</option>';
                     }
-                });
+                })
+                .catch(e => {}); // Error ya cubierto arriba
         }
 
         function loadDashboard() {
             const tbody = document.getElementById('table-rncs');
+            if (API_URL === "PEGUE_SU_URL_EXEC_AQUI") {
+                tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-red-500 bg-red-50 rounded">ERROR: Configure la API URL.</td></tr>`;
+                return;
+            }
+
             tbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-gray-500"><div class="loader h-8 w-8 border-4 border-t-4 border-blue-200 rounded-full mx-auto mb-2"></div>Conectando...</td></tr>';
             
-            // Añadimos cacheBust para evitar que Google devuelva datos viejos
             fetch(`${API_URL}?action=getRNCs&bust=${Date.now()}`)
                 .then(r => r.json())
                 .then(res => {
@@ -261,7 +279,6 @@
                     }
                     res.rncs.forEach(item => {
                         const link = item.foto_url ? `<a href="${item.foto_url}" target="_blank" class="text-blue-600 hover:underline font-bold"><i class="fas fa-image"></i> Ver</a>` : '-';
-                        // Ajuste de formato de fecha si viene con T o Z
                         let fechaClean = item.fecha_hora ? item.fecha_hora.split(',')[0] : 'N/A';
                         
                         tbody.innerHTML += `
@@ -293,7 +310,6 @@
             const area = document.getElementById('input-area').value;
             if(!proto || !superv || !area) return showNotify("Complete todos los campos", "error");
 
-            // Loading state
             const btn = document.querySelector('#step-1 button');
             const originalText = btn.innerHTML;
             btn.disabled = true;
@@ -426,16 +442,14 @@
         }
 
         function cerrarRNC(rowIndex) {
-            // Reusar el dropdown para identificar quién cierra
             const supervisor = document.getElementById('input-supervisor').value;
-            if(!supervisor) {
-                 // Si estamos en dashboard directo, pedir nombre manual
-                 const manualName = prompt("Para cerrar, ingrese su nombre:");
-                 if(!manualName) return;
-                 executeClose(rowIndex, manualName);
+            const nombre = supervisor || prompt("Para cerrar, ingrese su nombre:");
+            
+            if(!nombre) {
+                if(!supervisor) return; 
             } else {
-                if(!confirm(`¿Confirmar cierre como ${supervisor}?`)) return;
-                executeClose(rowIndex, supervisor);
+                if(!confirm(`¿Confirmar cierre como ${nombre}?`)) return;
+                executeClose(rowIndex, nombre);
             }
         }
 
