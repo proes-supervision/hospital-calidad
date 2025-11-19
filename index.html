@@ -36,7 +36,7 @@
                     <p class="text-gray-500 font-medium">Supervisión Hospital de Segundo Nivel Isaías</p>
                 </div>
                 <div class="hidden md:block text-right">
-                    <div class="text-xs font-bold text-blue-900 bg-blue-100 px-3 py-1 rounded-full uppercase tracking-wide">v16.0 Final</div>
+                    <div class="text-xs font-bold text-blue-900 bg-blue-100 px-3 py-1 rounded-full uppercase tracking-wide">v17.0 Estabilidad</div>
                 </div>
             </div>
         </header>
@@ -180,20 +180,16 @@
         // ==========================================
         // CONFIGURACIÓN
         // ==========================================
+        // ¡¡¡CRÍTICO: PEGUE SU URL DE APPS SCRIPT AQUÍ!!!
         const API_URL = "https://script.google.com/macros/s/AKfycbyslQF7AIHw---JF1bMz5JcwFW1e3Rao1VFz-K4EHqWhSYQWls5EupHqHvgAElsQ22Llg/exec"; 
         // ==========================================
 
         let currentChecklist = [];
         let isRNC = false;
-        let selectedSupervisor = null; // Almacena el nombre del supervisor
 
         document.addEventListener('DOMContentLoaded', () => {
             loadDashboard();
             loadDropdowns();
-            // Listener para capturar el nombre del supervisor
-            document.getElementById('input-supervisor').addEventListener('change', (e) => {
-                selectedSupervisor = e.target.value;
-            });
         });
 
         function switchTab(tab) {
@@ -225,7 +221,6 @@
         }
 
         function loadDropdowns() {
-            // Tarea 1: Verificar la configuración de la URL
             if (API_URL === "PEGUE_SU_URL_EXEC_AQUI") {
                  showNotify("ERROR: La URL de la API NO está configurada.", "error");
                  document.getElementById('input-supervisor').innerHTML = '<option value="">ERROR: Configuración</option>';
