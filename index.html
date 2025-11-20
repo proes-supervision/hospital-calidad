@@ -1,498 +1,592 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGCO - Calidad Hospital Isaías</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Iconos -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-    <style>
-        .loader { border-top-color: #3b82f6; -webkit-animation: spinner 1.5s linear infinite; animation: spinner 1.5s linear infinite; }
-        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .view-section { display: none; }
-        #view-dashboard { display: block; }
-        
-        /* Mejoras visuales */
-        .card-header { background: linear-gradient(to right, #1e3a8a, #2563eb); color: white; }
-        .btn-primary { background-color: #2563eb; color: white; }
-        .btn-primary:hover { background-color: #1d4ed8; }
-        .input-field { border: 1px solid #d1d5db; border-radius: 0.5rem; padding: 0.75rem; width: 100%; transition: border-color 0.2s; }
-        .input-field:focus { outline: none; border-color: #2563eb; ring: 2px solid #bfdbfe; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SGCO - Calidad Hospital Isaías</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <style>
+    .loader { border-top-color: #3b82f6; -webkit-animation: spinner 1.5s linear infinite; animation: spinner 1.5s linear infinite; }
+    @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .view-section { display: none; }
+    #view-dashboard { display: block; }
+    .card-header { background: linear-gradient(to right, #1e3a8a, #2563eb); color: white; }
+    .btn-primary { background-color: #2563eb; color: white; }
+    .btn-primary:hover { background-color: #1d4ed8; }
+    .input-field { border: 1px solid #d1d5db; border-radius: 0.5rem; padding: 0.75rem; width: 100%; transition: border-color 0.2s; }
+    .input-field:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 4px rgba(191,219,254,0.3); }
+  </style>
 </head>
 <body class="bg-gray-100 min-h-screen font-sans text-gray-800">
 
-    <!-- Notificación Flotante -->
-    <div id="notification" class="hidden fixed top-4 right-4 z-50 p-3 text-center text-sm text-white rounded-md shadow-lg transform transition-all duration-500"></div>
+  <div id="notification" class="hidden fixed top-4 right-4 z-50 p-3 text-center text-sm text-white rounded-md shadow-lg transform transition-all duration-500"></div>
 
-    <div class="container mx-auto px-4 py-6 max-w-6xl">
-        
-        <!-- Encabezado -->
-        <header class="bg-white rounded-xl shadow-lg overflow-hidden mb-6">
-            <div class="p-6 border-l-8 border-blue-900 flex justify-between items-center">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Sistema de Gestión de Calidad</h1>
-                    <p class="text-gray-500 font-medium">Supervisión Hospital de Segundo Nivel Isaías</p>
-                </div>
-                <div class="hidden md:block text-right">
-                    <div class="text-xs font-bold text-blue-900 bg-blue-100 px-3 py-1 rounded-full uppercase tracking-wide">v17.0 Final</div>
-                </div>
-            </div>
-        </header>
-
-        <!-- Navegación (Tabs) -->
-        <div class="flex mb-6 bg-white rounded-lg shadow p-1 gap-2">
-            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="flex-1 py-3 px-6 rounded-md font-bold transition-all duration-200 bg-blue-600 text-white shadow">
-                <i class="fas fa-list-alt mr-2"></i> RNCs Abiertas
-            </button>
-            <button onclick="switchTab('inspection')" id="tab-inspection" class="flex-1 py-3 px-6 rounded-md font-bold text-gray-600 hover:bg-gray-100 transition-all duration-200">
-                <i class="fas fa-plus-circle mr-2"></i> Nueva Inspección
-            </button>
+  <div class="container mx-auto px-4 py-6 max-w-6xl">
+    <header class="bg-white rounded-xl shadow-lg overflow-hidden mb-6">
+      <div class="p-6 border-l-8 border-blue-900 flex justify-between items-center">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Sistema de Gestión de Calidad</h1>
+          <p class="text-gray-500 font-medium">Supervisión Hospital de Segundo Nivel Isaías</p>
         </div>
-
-        <!-- VISTA 1: DASHBOARD -->
-        <div id="view-dashboard" class="view-section">
-            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-                <div class="p-5 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-                    <h2 class="text-lg font-bold text-gray-700"><i class="fas fa-exclamation-triangle text-yellow-500 mr-2"></i> No Conformidades Pendientes</h2>
-                    <button onclick="loadDashboard()" class="text-blue-600 hover:text-blue-800 font-bold text-sm flex items-center">
-                        <i class="fas fa-sync-alt mr-1"></i> Actualizar
-                    </button>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-100 text-gray-600 uppercase text-xs font-bold">
-                            <tr>
-                                <th class="py-3 px-4 text-left">Fecha</th>
-                                <th class="py-3 px-4 text-left">Supervisor</th>
-                                <th class="py-3 px-4 text-left">Área</th>
-                                <th class="py-3 px-4 text-left">Defecto</th>
-                                <th class="py-3 px-4 text-center">Evidencia</th>
-                                <th class="py-3 px-4 text-center">Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody id="table-rncs" class="bg-white divide-y divide-gray-200 text-sm">
-                            <tr><td colspan="6" class="py-10 text-center text-gray-500">Cargando datos...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+        <div class="hidden md:block text-right">
+          <div class="text-xs font-bold text-blue-900 bg-blue-100 px-3 py-1 rounded-full uppercase tracking-wide">v17.0 Final</div>
         </div>
+      </div>
+    </header>
 
-        <!-- VISTA 2: FORMULARIO INSPECCIÓN -->
-        <div id="view-inspection" class="view-section hidden">
-            <div class="bg-white rounded-xl shadow-lg max-w-4xl mx-auto overflow-hidden">
-                <div class="card-header p-4 text-center">
-                    <h2 class="text-xl font-bold">Formulario de Inspección</h2>
-                </div>
-                
-                <div class="p-8">
-                    <!-- PASO 1: Configuración -->
-                    <div id="step-1">
-                        <div class="mb-6 pb-2 border-b border-gray-200">
-                            <h3 class="text-lg font-bold text-gray-800">1. Datos Generales</h3>
-                        </div>
-
-                        <div class="space-y-5">
-                            <!-- Selector de Supervisor (Cargado desde Google Sheets) -->
-                            <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-2">Supervisor Responsable</label>
-                                <select id="input-supervisor" class="input-field bg-blue-50">
-                                    <option value="">Cargando lista...</option>
-                                </select>
-                                <p class="text-xs text-gray-500 mt-1">Seleccione su nombre para firmar el registro.</p>
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-2">Protocolo</label>
-                                    <select id="input-protocolo" class="input-field">
-                                        <option value="">Cargando protocolos...</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-2">Área / Ubicación</label>
-                                    <input type="text" id="input-area" class="input-field" placeholder="Ej: Losa Nivel 2, Eje 4-A">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mt-8">
-                            <button onclick="loadChecklist()" class="w-full btn-primary font-bold py-4 rounded-lg shadow-md transition transform hover:scale-[1.01]">
-                                Iniciar Checklist <i class="fas fa-arrow-right ml-2"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- PASO 2: Checklist -->
-                    <div id="step-2" class="hidden">
-                        <div class="mb-6 pb-2 border-b border-gray-200 flex justify-between items-center">
-                            <h3 class="text-lg font-bold text-gray-800">2. Verificación</h3>
-                            <button onclick="cancelInspection()" class="text-sm text-gray-500 hover:text-red-600 underline">Cancelar</button>
-                        </div>
-
-                        <div id="checklist-container" class="space-y-4 mb-8">
-                            <!-- Items dinámicos -->
-                        </div>
-
-                        <!-- Panel RNC -->
-                        <div id="panel-rnc" class="hidden bg-red-50 border border-red-200 p-6 rounded-lg mb-8 shadow-inner">
-                            <div class="flex items-center mb-4 text-red-700">
-                                <i class="fas fa-exclamation-circle text-2xl mr-3"></i>
-                                <h3 class="text-lg font-bold">Se requiere Reporte de No Conformidad (RNC)</h3>
-                            </div>
-                            
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-bold text-gray-700 mb-1">Descripción del Defecto</label>
-                                    <textarea id="input-defecto" class="input-field border-red-300 focus:border-red-500 focus:ring-red-200" rows="2" placeholder="Describa la falla..."></textarea>
-                                </div>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-bold text-gray-700 mb-1">Responsable Corrección</label>
-                                        <input type="text" id="input-responsable" class="input-field border-red-300" placeholder="Ej: Contratista Civil">
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-bold text-gray-700 mb-1">Foto Evidencia</label>
-                                        <input type="file" id="input-foto" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-red-100 file:text-red-700 hover:file:bg-red-200 transition">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="flex gap-4 pt-6 border-t">
-                            <button onclick="cancelInspection()" class="w-1/3 bg-gray-200 text-gray-700 font-bold py-3 rounded-lg hover:bg-gray-300 transition">
-                                Atrás
-                            </button>
-                            <button onclick="submitInspection()" id="btn-save" class="w-2/3 bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition shadow-md flex justify-center items-center">
-                                <span>Guardar Inspección</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="flex mb-6 bg-white rounded-lg shadow p-1 gap-2">
+      <button onclick="switchTab('dashboard')" id="tab-dashboard" class="flex-1 py-3 px-6 rounded-md font-bold transition-all duration-200 bg-blue-600 text-white shadow">
+        <i class="fas fa-list-alt mr-2"></i> RNCs Abiertas
+      </button>
+      <button onclick="switchTab('inspection')" id="tab-inspection" class="flex-1 py-3 px-6 rounded-md font-bold text-gray-600 hover:bg-gray-100 transition-all duration-200">
+        <i class="fas fa-plus-circle mr-2"></i> Nueva Inspección
+      </button>
     </div>
 
-    <!-- Pie de página (Ajuste Solicitado) -->
-    <footer class="mt-12 pt-6 border-t border-gray-300 text-center text-sm text-gray-500">
-        <p>
-            Desarrollado por Zacarias Ortega para el Proyecto Construcción Hospital de Segundo Nivel Isaías - Oruro
-        </p>
-    </footer>
+    <!-- DASHBOARD -->
+    <div id="view-dashboard" class="view-section">
+      <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div class="p-5 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+          <h2 class="text-lg font-bold text-gray-700"><i class="fas fa-exclamation-triangle text-yellow-500 mr-2"></i> No Conformidades Pendientes</h2>
+          <button onclick="loadDashboard()" class="text-blue-600 hover:text-blue-800 font-bold text-sm flex items-center">
+            <i class="fas fa-sync-alt mr-1"></i> Actualizar
+          </button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-100 text-gray-600 uppercase text-xs font-bold">
+              <tr>
+                <th class="py-3 px-4 text-left">Fecha</th>
+                <th class="py-3 px-4 text-left">Supervisor</th>
+                <th class="py-3 px-4 text-left">Área</th>
+                <th class="py-3 px-4 text-left">Defecto</th>
+                <th class="py-3 px-4 text-center">Evidencia</th>
+                <th class="py-3 px-4 text-center">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="table-rncs" class="bg-white divide-y divide-gray-200 text-sm">
+              <tr><td colspan="6" class="py-10 text-center text-gray-500">Cargando datos...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
-    <!-- LÓGICA JS -->
-    <script>
-        // ==========================================
-        // CONFIGURACIÓN
-        // ==========================================
-        const API_URL = "https://script.google.com/macros/s/AKfycbxxYjCsJp_ldPteYuGV51apF8M9mhgZhTFDcvTjl39sT_kthSapgqwaYRRMI-FYxPOjpQ/exec"; 
-        // ==========================================
+    <!-- INSPECCIÓN -->
+    <div id="view-inspection" class="view-section hidden">
+      <div class="bg-white rounded-xl shadow-lg max-w-4xl mx-auto overflow-hidden">
+        <div class="card-header p-4 text-center">
+          <h2 class="text-xl font-bold">Formulario de Inspección</h2>
+        </div>
 
-        let currentChecklist = [];
-        let isRNC = false;
+        <div class="p-8">
+          <div id="step-1">
+            <div class="mb-6 pb-2 border-b border-gray-200">
+              <h3 class="text-lg font-bold text-gray-800">1. Datos Generales</h3>
+            </div>
 
-        document.addEventListener('DOMContentLoaded', () => {
-            loadDashboard();
-            loadDropdowns();
+            <div class="space-y-5">
+              <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Supervisor Responsable</label>
+                <select id="input-supervisor" class="input-field bg-blue-50">
+                  <option value="">Cargando lista...</option>
+                </select>
+                <p class="text-xs text-gray-500 mt-1">Seleccione su nombre para firmar el registro.</p>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2">Protocolo</label>
+                  <select id="input-protocolo" class="input-field">
+                    <option value="">Cargando protocolos...</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2">Área / Ubicación</label>
+                  <input type="text" id="input-area" class="input-field" placeholder="Ej: Losa Nivel 2, Eje 4-A">
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-8">
+              <button onclick="loadChecklist()" id="btn-start-checklist" class="w-full btn-primary font-bold py-4 rounded-lg shadow-md transition transform hover:scale-[1.01]">
+                Iniciar Checklist <i class="fas fa-arrow-right ml-2"></i>
+              </button>
+            </div>
+          </div>
+
+          <div id="step-2" class="hidden">
+            <div class="mb-6 pb-2 border-b border-gray-200 flex justify-between items-center">
+              <h3 class="text-lg font-bold text-gray-800">2. Verificación</h3>
+              <button onclick="cancelInspection()" class="text-sm text-gray-500 hover:text-red-600 underline">Cancelar</button>
+            </div>
+
+            <div id="checklist-container" class="space-y-4 mb-8"></div>
+
+            <div id="panel-rnc" class="hidden bg-red-50 border border-red-200 p-6 rounded-lg mb-8 shadow-inner">
+              <div class="flex items-center mb-4 text-red-700">
+                <i class="fas fa-exclamation-circle text-2xl mr-3"></i>
+                <h3 class="text-lg font-bold">Se requiere Reporte de No Conformidad (RNC)</h3>
+              </div>
+
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-1">Descripción del Defecto</label>
+                  <textarea id="input-defecto" class="input-field border-red-300 focus:border-red-500 focus:ring-red-200" rows="2" placeholder="Describa la falla..."></textarea>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Responsable Corrección</label>
+                    <input type="text" id="input-responsable" class="input-field border-red-300" placeholder="Ej: Contratista Civil">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Foto Evidencia</label>
+                    <input type="file" id="input-foto" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-red-100 file:text-red-700 hover:file:bg-red-200 transition">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex gap-4 pt-6 border-t">
+              <button onclick="cancelInspection()" class="w-1/3 bg-gray-200 text-gray-700 font-bold py-3 rounded-lg hover:bg-gray-300 transition">
+                Atrás
+              </button>
+              <button onclick="submitInspection()" id="btn-save" class="w-2/3 bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition shadow-md flex justify-center items-center">
+                <span>Guardar Inspección</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="mt-12 pt-6 border-t border-gray-300 text-center text-sm text-gray-500">
+    <p>Desarrollado por Zacarias Ortega para el Proyecto Construcción Hospital de Segundo Nivel Isaías - Oruro</p>
+  </footer>
+
+  <!-- SCRIPT -->
+  <script>
+    // ------------------------------------------------
+    // CONFIG: pega aquí la URL de tu Web App exec
+    // ------------------------------------------------
+    const API_URL = "https://script.google.com/macros/s/AKfycbx1OivQeQQk4ScIptKA9SfutWagfo49pTQIYS4PkbNFa8t17Xri-SbqwgzwrPESxPXm8A/exec"; // p.ej. https://script.google.com/macros/s/XXXXX/exec
+    // ------------------------------------------------
+
+    let currentChecklist = [];
+    let isRNC = false;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadDashboard();
+      loadDropdowns();
+    });
+
+    // ---------- UTIL: parsear JSONP (espera callbackName(...); ) ----------
+    function parseJSONP(text, callbackName = "callback") {
+      if (!text || typeof text !== "string") throw new Error("Respuesta inválida");
+      // trimeos
+      text = text.trim();
+      const prefix = callbackName + "(";
+      if (text.startsWith(prefix) && text.endsWith(");")) {
+        const jsonPart = text.substring(prefix.length, text.length - 2);
+        return JSON.parse(jsonPart);
+      }
+      // si viene con otro callback automático (ej: callback123(...));
+      const firstParen = text.indexOf("(");
+      const lastParen = text.lastIndexOf(")");
+      if (firstParen > 0 && lastParen > firstParen) {
+        const maybeJson = text.substring(firstParen + 1, lastParen);
+        return JSON.parse(maybeJson);
+      }
+      throw new Error("No se pudo parsear JSONP");
+    }
+
+    // ---------- UTIL: obtener primer campo existente entre candidatos ----------
+    function pickField(obj, candidates) {
+      for (const c of candidates) {
+        if (Object.prototype.hasOwnProperty.call(obj, c) && obj[c] !== undefined && obj[c] !== null) return obj[c];
+      }
+      return null;
+    }
+
+    // ---------- API wrapper (adapta a JSONP) ----------
+    async function apiGet(params = {}) {
+      if (!API_URL || API_URL === "PEGUE_SU_URL_EXEC_AQUI") throw new Error("API_URL no configurada");
+      // forzamos callback fijo para parseo simple
+      const cbName = "__cb";
+      const url = new URL(API_URL);
+      Object.keys(params).forEach(k => url.searchParams.set(k, params[k]));
+      url.searchParams.set("callback", cbName);
+      const res = await fetch(url.toString(), { method: "GET", cache: "no-store" });
+      const text = await res.text();
+      return parseJSONP(text, cbName);
+    }
+
+    async function apiPost(payload = {}) {
+      if (!API_URL || API_URL === "PEGUE_SU_URL_EXEC_AQUI") throw new Error("API_URL no configurada");
+      const cbName = "__cb";
+      const url = new URL(API_URL);
+      url.searchParams.set("callback", cbName); // Apps Script lee e.parameter.callback
+      const res = await fetch(url.toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const text = await res.text();
+      return parseJSONP(text, cbName);
+    }
+
+    // ---------- Navegación ----------
+    function switchTab(tab) {
+      document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
+      document.getElementById('view-' + tab).style.display = 'block';
+      const tabDash = document.getElementById('tab-dashboard');
+      const tabInsp = document.getElementById('tab-inspection');
+
+      if (tab === 'dashboard') {
+        tabDash.classList.replace('text-gray-600', 'text-white');
+        tabDash.classList.replace('bg-white', 'bg-blue-600');
+        tabDash.classList.remove('hover:bg-gray-50');
+        tabInsp.classList.replace('text-white', 'text-gray-600');
+        tabInsp.classList.replace('bg-blue-600', 'bg-white');
+        tabInsp.classList.add('hover:bg-gray-50');
+        loadDashboard();
+      } else {
+        tabInsp.classList.replace('text-gray-600', 'text-white');
+        tabInsp.classList.replace('bg-white', 'bg-blue-600');
+        tabInsp.classList.remove('hover:bg-gray-50');
+        tabDash.classList.replace('text-white', 'text-gray-600');
+        tabDash.classList.replace('bg-blue-600', 'bg-white');
+        tabDash.classList.add('hover:bg-gray-50');
+        cancelInspection();
+      }
+    }
+
+    // ---------- Carga dropdowns ----------
+    function loadDropdowns() {
+      const supSel = document.getElementById('input-supervisor');
+      const protSel = document.getElementById('input-protocolo');
+
+      if (!API_URL || API_URL === "PEGUE_SU_URL_EXEC_AQUI") {
+        showNotify("ERROR: La URL de la API NO está configurada.", "error");
+        supSel.innerHTML = '<option value="">ERROR: Configuración</option>';
+        protSel.innerHTML = '<option value="">ERROR: Configuración</option>';
+        return;
+      }
+
+      // Usuarios
+      apiGet({ action: 'getUsuarios' })
+        .then(res => {
+          if (res.status === 'success' && Array.isArray(res.usuarios)) {
+            supSel.innerHTML = '<option value="">Seleccione su nombre...</option>';
+            res.usuarios.forEach(u => {
+              supSel.innerHTML += `<option value="${escapeHtml(String(u))}">${escapeHtml(String(u))}</option>`;
+            });
+          } else {
+            supSel.innerHTML = '<option value="">Error cargando usuarios</option>';
+            if (res && res.message) showNotify("Error API: " + res.message, "error");
+          }
+        })
+        .catch(err => {
+          supSel.innerHTML = '<option value="">Error de conexión</option>';
+          showNotify("Error: No se pudo contactar al servidor de la API.", "error");
+          console.error(err);
         });
 
-        function switchTab(tab) {
-            document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
-            document.getElementById('view-' + tab).style.display = 'block';
-            
-            const tabDash = document.getElementById('tab-dashboard');
-            const tabInsp = document.getElementById('tab-inspection');
-            
-            if(tab === 'dashboard') {
-                tabDash.classList.replace('text-gray-600', 'text-white');
-                tabDash.classList.replace('bg-white', 'bg-blue-600');
-                tabDash.classList.remove('hover:bg-gray-50');
-                
-                tabInsp.classList.replace('text-white', 'text-gray-600');
-                tabInsp.classList.replace('bg-blue-600', 'bg-white');
-                tabInsp.classList.add('hover:bg-gray-50');
-                loadDashboard();
-            } else {
-                tabInsp.classList.replace('text-gray-600', 'text-white');
-                tabInsp.classList.replace('bg-white', 'bg-blue-600');
-                tabInsp.classList.remove('hover:bg-gray-50');
-                
-                tabDash.classList.replace('text-white', 'text-gray-600');
-                tabDash.classList.replace('bg-blue-600', 'bg-white');
-                tabDash.classList.add('hover:bg-gray-50');
-                cancelInspection();
-            }
-        }
-
-        function loadDropdowns() {
-            if (API_URL === "PEGUE_SU_URL_EXEC_AQUI") {
-                 showNotify("ERROR: La URL de la API NO está configurada.", "error");
-                 document.getElementById('input-supervisor').innerHTML = '<option value="">ERROR: Configuración</option>';
-                 document.getElementById('input-protocolo').innerHTML = '<option value="">ERROR: Configuración</option>';
-                 return;
-            }
-            
-            // 1. Cargar Supervisores (Usuarios)
-            fetch(`${API_URL}?action=getUsuarios`)
-                .then(r => r.json())
-                .then(res => {
-                    const sel = document.getElementById('input-supervisor');
-                    if(res.status === 'success') {
-                        sel.innerHTML = '<option value="">Seleccione su nombre...</option>';
-                        res.usuarios.forEach(u => sel.innerHTML += `<option value="${u}">${u}</option>`);
-                    } else {
-                        sel.innerHTML = '<option value="">Error cargando usuarios</option>';
-                        showNotify("Error API: " + res.message, "error");
-                    }
-                })
-                .catch(e => {
-                    document.getElementById('input-supervisor').innerHTML = '<option value="">Error de conexión</option>';
-                    showNotify("Error: No se pudo contactar al servidor de la API.", "error");
-                });
-
-            // 2. Cargar Protocolos
-            fetch(`${API_URL}?action=getProtocolos`)
-                .then(r => r.json())
-                .then(res => {
-                    const sel = document.getElementById('input-protocolo');
-                    if(res.status === 'success') {
-                        sel.innerHTML = '<option value="">Seleccione un protocolo...</option>';
-                        res.protocolos.forEach(p => sel.innerHTML += `<option value="${p.protocolo_id}">${p.nombre_protocolo}</option>`);
-                    } else {
-                        document.getElementById('input-protocolo').innerHTML = '<option value="">Error cargando protocolos</option>';
-                    }
-                })
-                .catch(e => {}); // Error ya cubierto arriba
-        }
-
-        function loadDashboard() {
-            const tbody = document.getElementById('table-rncs');
-            if (API_URL === "PEGUE_SU_URL_EXEC_AQUI") {
-                tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-red-500 bg-red-50 rounded">ERROR: Configure la API URL.</td></tr>`;
-                return;
-            }
-
-            tbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-gray-500"><div class="loader h-8 w-8 border-4 border-t-4 border-blue-200 rounded-full mx-auto mb-2"></div>Conectando...</td></tr>';
-            
-            fetch(`${API_URL}?action=getRNCs&bust=${Date.now()}`)
-                .then(r => r.json())
-                .then(res => {
-                    tbody.innerHTML = '';
-                    if(!res.rncs || res.rncs.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-green-600 font-bold bg-green-50 rounded-lg">¡Todo conforme! Sin RNCs.</td></tr>';
-                        return;
-                    }
-                    res.rncs.forEach(item => {
-                        const link = item.foto_url ? `<a href="${item.foto_url}" target="_blank" class="text-blue-600 hover:underline font-bold"><i class="fas fa-image"></i> Ver</a>` : '-';
-                        let fechaClean = item.fecha_hora ? item.fecha_hora.split(',')[0] : 'N/A';
-                        
-                        tbody.innerHTML += `
-                            <tr class="border-b hover:bg-blue-50 transition">
-                                <td class="py-3 px-4 text-gray-600 text-xs">${fechaClean}</td>
-                                <td class="py-3 px-4 font-bold text-gray-800">${item.supervisor}</td>
-                                <td class="py-3 px-4 text-gray-600">${item.area}</td>
-                                <td class="py-3 px-4 text-red-600 font-medium">${item.defecto}</td>
-                                <td class="py-3 px-4 text-center">${link}</td>
-                                <td class="py-3 px-4 text-center">
-                                    <button onclick="cerrarRNC(${item.rowIndex})" class="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded shadow hover:bg-green-600 transition">
-                                        Cerrar
-                                    </button>
-                                </td>
-                            </tr>`;
-                    });
-                })
-                .catch(e => {
-                    tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-red-500 bg-red-50 border border-red-200 rounded">
-                        <b>Error de Conexión:</b> No se pudo contactar al servidor.<br>
-                        <span class="text-xs">Verifique la URL de la API en el código.</span>
-                    </td></tr>`;
-                });
-        }
-
-        function loadChecklist() {
-            const proto = document.getElementById('input-protocolo').value;
-            const superv = document.getElementById('input-supervisor').value;
-            const area = document.getElementById('input-area').value;
-            if(!proto || !superv || !area) return showNotify("Complete todos los campos", "error");
-
-            const btn = document.querySelector('#step-1 button');
-            const originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<div class="loader h-5 w-5 border-2 border-t-2 border-white rounded-full inline-block mr-2"></div> Cargando...';
-
-            fetch(`${API_URL}?action=getChecklist&protocoloId=${proto}`)
-                .then(r => r.json())
-                .then(res => {
-                    btn.disabled = false;
-                    btn.innerHTML = originalText;
-
-                    if(res.status === 'error' || res.checklist.length === 0) {
-                        showNotify("No se encontró checklist para este protocolo", "error");
-                        return;
-                    }
-
-                    const cont = document.getElementById('checklist-container');
-                    cont.innerHTML = '';
-                    currentChecklist = res.checklist;
-                    
-                    res.checklist.forEach((item, idx) => {
-                        cont.innerHTML += `
-                            <div class="bg-white border border-gray-200 p-4 rounded-lg shadow-sm hover:border-blue-400 transition">
-                                <p class="font-bold text-gray-800 mb-1">${item.item_descripcion}</p>
-                                <p class="text-xs text-gray-500 mb-3 italic bg-gray-100 p-1 rounded inline-block">${item.especificacion || 'Sin especificación'}</p>
-                                <div class="flex gap-4 text-sm mt-2">
-                                    <label class="flex items-center cursor-pointer p-2 rounded hover:bg-green-50"><input type="radio" name="chk_${idx}" value="Aprobado" onchange="checkStatus()" required class="mr-2 text-green-600 focus:ring-green-500"> <span class="text-green-700 font-bold">Aprobado</span></label>
-                                    <label class="flex items-center cursor-pointer p-2 rounded hover:bg-red-50"><input type="radio" name="chk_${idx}" value="Rechazado" onchange="checkStatus()" class="mr-2 text-red-600 focus:ring-red-500"> <span class="text-red-700 font-bold">Rechazado</span></label>
-                                    <label class="flex items-center cursor-pointer p-2 rounded hover:bg-gray-100"><input type="radio" name="chk_${idx}" value="N/A" onchange="checkStatus()" class="mr-2 text-gray-400 focus:ring-gray-400"> N/A</label>
-                                </div>
-                            </div>`;
-                    });
-
-                    document.getElementById('step-1').classList.add('hidden');
-                    document.getElementById('step-2').classList.remove('hidden');
-                })
-                .catch(e => {
-                    btn.disabled = false;
-                    btn.innerHTML = originalText;
-                    showNotify("Error de conexión al cargar checklist", "error");
-                });
-        }
-
-        function checkStatus() {
-            const inputs = document.querySelectorAll('input[type="radio"]:checked');
-            let hasFail = false;
-            inputs.forEach(inp => { if(inp.value === 'Rechazado') hasFail = true; });
-            
-            const panel = document.getElementById('panel-rnc');
-            const btn = document.getElementById('btn-save');
-            if(hasFail) {
-                panel.classList.remove('hidden');
-                isRNC = true;
-                btn.innerHTML = "<span>Guardar Inspección (Generar RNC)</span>";
-                btn.className = "w-2/3 bg-red-600 text-white font-bold py-3 rounded-lg hover:bg-red-700 transition shadow-md flex justify-center items-center";
-            } else {
-                panel.classList.add('hidden');
-                isRNC = false;
-                btn.innerHTML = "<span>Guardar Inspección (Aprobar)</span>";
-                btn.className = "w-2/3 bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition shadow-md flex justify-center items-center";
-            }
-        }
-
-        function submitInspection() {
-            const btn = document.getElementById('btn-save');
-            
-            const checkedItems = document.querySelectorAll('input[type="radio"]:checked').length;
-            if(checkedItems < currentChecklist.length) {
-                return showNotify("Responda todos los ítems del checklist", "error");
-            }
-
-            if(isRNC) {
-                if(!document.getElementById('input-defecto').value || !document.getElementById('input-responsable').value) {
-                    return showNotify("Complete la descripción y el responsable de la RNC", "error");
-                }
-            }
-
-            btn.disabled = true;
-            btn.innerHTML = '<div class="loader h-5 w-5 border-2 border-t-2 border-white rounded-full inline-block mr-2"></div> Guardando...';
-
-            const items = [];
-            currentChecklist.forEach((c, idx) => {
-                const val = document.querySelector(`input[name="chk_${idx}"]:checked`)?.value || "-";
-                items.push({item: c.item_descripcion, res: val});
+      // Protocolos
+      apiGet({ action: 'getProtocolos' })
+        .then(res => {
+          if (res.status === 'success' && Array.isArray(res.protocolos)) {
+            protSel.innerHTML = '<option value="">Seleccione un protocolo...</option>';
+            res.protocolos.forEach(p => {
+              // buscamos campos posibles
+              const id = pickField(p, ['protocolo_id', 'protocolo', 'id']) || '';
+              const label = pickField(p, ['nombre_protocolo', 'nombre', 'name']) || id || 'Protocolo';
+              protSel.innerHTML += `<option value="${escapeHtml(String(id))}">${escapeHtml(String(label))}</option>`;
             });
+          } else {
+            protSel.innerHTML = '<option value="">Error cargando protocolos</option>';
+          }
+        })
+        .catch(err => {
+          protSel.innerHTML = '<option value="">Error de conexión</option>';
+          console.error(err);
+        });
+    }
 
-            const fileInput = document.getElementById('input-foto');
-            const reader = new FileReader();
-            
-            const sendData = (fileData = null) => {
-                const payload = {
-                    action: "saveInspeccion",
-                    supervisor: document.getElementById('input-supervisor').value,
-                    protocoloId: document.getElementById('input-protocolo').value,
-                    area: document.getElementById('input-area').value,
-                    resultado: isRNC ? "Rechazado" : "Aprobado",
-                    items: items,
-                    rnc: isRNC ? {
-                        defecto: document.getElementById('input-defecto').value,
-                        responsable: document.getElementById('input-responsable').value,
-                        fileData: fileData ? fileData.split(',')[1] : null,
-                        fileName: fileData ? fileInput.files[0].name : null,
-                        fileType: fileData ? fileInput.files[0].type : null
-                    } : {}
-                };
+    // ---------- Dashboard ----------
+    function loadDashboard() {
+      const tbody = document.getElementById('table-rncs');
+      if (!API_URL || API_URL === "PEGUE_SU_URL_EXEC_AQUI") {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-red-500 bg-red-50 rounded">ERROR: Configure la API URL.</td></tr>`;
+        return;
+      }
 
-                fetch(API_URL, { method: "POST", body: JSON.stringify(payload) })
-                .then(r => r.json())
-                .then(res => {
-                    if(res.status === 'success') {
-                        showNotify("Guardado Correctamente", "success");
-                        setTimeout(() => location.reload(), 1500);
-                    } else {
-                        throw new Error(res.message);
-                    }
-                })
-                .catch(e => {
-                    showNotify("Error: " + e.message, "error");
-                    btn.disabled = false;
-                    btn.innerText = "Reintentar Guardar";
-                });
-            };
+      tbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-gray-500"><div class="loader h-8 w-8 border-4 border-t-4 border-blue-200 rounded-full mx-auto mb-2"></div>Conectando...</td></tr>';
 
-            if(isRNC && fileInput.files.length > 0) {
-                reader.onload = () => sendData(reader.result);
-                reader.readAsDataURL(fileInput.files[0]);
+      apiGet({ action: 'getRNCs', bust: Date.now() })
+        .then(res => {
+          tbody.innerHTML = '';
+          const rncs = (res && res.rncs) ? res.rncs : [];
+          if (!Array.isArray(rncs) || rncs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-green-600 font-bold bg-green-50 rounded-lg">¡Todo conforme! Sin RNCs.</td></tr>';
+            return;
+          }
+
+          rncs.forEach(item => {
+            // adaptamos nombres de campo posibles
+            const fecha = pickField(item, ['fecha', 'fecha_hora', 'date']) || '';
+            const supervisor = pickField(item, ['supervisor', 'nombre', 'responsable']) || '';
+            const area = pickField(item, ['area', 'ubicacion', 'location']) || '';
+            const defecto = pickField(item, ['defecto', 'descripcion', 'issue']) || '';
+            const foto = pickField(item, ['foto_url', 'foto', 'file_url']) || '';
+            const rowIndex = item.rowIndex || item.row || '';
+
+            const link = foto ? `<a href="${escapeHtml(String(foto))}" target="_blank" class="text-blue-600 hover:underline font-bold"><i class="fas fa-image"></i> Ver</a>` : '-';
+            const fechaClean = (String(fecha || '')).split(' ')[0] || 'N/A';
+
+            tbody.innerHTML += `
+              <tr class="border-b hover:bg-blue-50 transition">
+                <td class="py-3 px-4 text-gray-600 text-xs">${escapeHtml(fechaClean)}</td>
+                <td class="py-3 px-4 font-bold text-gray-800">${escapeHtml(supervisor)}</td>
+                <td class="py-3 px-4 text-gray-600">${escapeHtml(area)}</td>
+                <td class="py-3 px-4 text-red-600 font-medium">${escapeHtml(defecto)}</td>
+                <td class="py-3 px-4 text-center">${link}</td>
+                <td class="py-3 px-4 text-center">
+                  <button onclick="cerrarRNC(${escapeJs(rowIndex)})" class="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded shadow hover:bg-green-600 transition">
+                    Cerrar
+                  </button>
+                </td>
+              </tr>`;
+          });
+        })
+        .catch(err => {
+          tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-red-500 bg-red-50 border border-red-200 rounded">
+            <b>Error de Conexión:</b> No se pudo contactar al servidor.<br>
+            <span class="text-xs">Verifique la URL de la API en el código.</span>
+          </td></tr>`;
+          console.error(err);
+        });
+    }
+
+    // ---------- Cargar checklist ----------
+    function loadChecklist() {
+      const proto = document.getElementById('input-protocolo').value;
+      const superv = document.getElementById('input-supervisor').value;
+      const area = document.getElementById('input-area').value;
+      if (!proto || !superv || !area) return showNotify("Complete todos los campos", "error");
+
+      const btn = document.querySelector('#btn-start-checklist');
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<div class="loader h-5 w-5 border-2 border-t-2 border-white rounded-full inline-block mr-2"></div> Cargando...';
+
+      apiGet({ action: 'getChecklist', protocoloId: proto })
+        .then(res => {
+          btn.disabled = false;
+          btn.innerHTML = originalText;
+
+          if (!res || res.status === 'error' || !Array.isArray(res.checklist) || res.checklist.length === 0) {
+            showNotify("No se encontró checklist para este protocolo", "error");
+            return;
+          }
+
+          const cont = document.getElementById('checklist-container');
+          cont.innerHTML = '';
+          currentChecklist = res.checklist;
+
+          res.checklist.forEach((item, idx) => {
+            const desc = pickField(item, ['item_descripcion', 'descripcion', 'item', 'texto']) || 'Ítem';
+            const spec = pickField(item, ['especificacion', 'spec', 'detalle']) || '';
+            cont.innerHTML += `
+              <div class="bg-white border border-gray-200 p-4 rounded-lg shadow-sm hover:border-blue-400 transition">
+                <p class="font-bold text-gray-800 mb-1">${escapeHtml(desc)}</p>
+                <p class="text-xs text-gray-500 mb-3 italic bg-gray-100 p-1 rounded inline-block">${escapeHtml(spec || 'Sin especificación')}</p>
+                <div class="flex gap-4 text-sm mt-2">
+                  <label class="flex items-center cursor-pointer p-2 rounded hover:bg-green-50"><input type="radio" name="chk_${idx}" value="Aprobado" onchange="checkStatus()" required class="mr-2 text-green-600"> <span class="text-green-700 font-bold">Aprobado</span></label>
+                  <label class="flex items-center cursor-pointer p-2 rounded hover:bg-red-50"><input type="radio" name="chk_${idx}" value="Rechazado" onchange="checkStatus()" class="mr-2 text-red-600"> <span class="text-red-700 font-bold">Rechazado</span></label>
+                  <label class="flex items-center cursor-pointer p-2 rounded hover:bg-gray-100"><input type="radio" name="chk_${idx}" value="N/A" onchange="checkStatus()" class="mr-2 text-gray-400"> N/A</label>
+                </div>
+              </div>`;
+          });
+
+          document.getElementById('step-1').classList.add('hidden');
+          document.getElementById('step-2').classList.remove('hidden');
+        })
+        .catch(err => {
+          btn.disabled = false;
+          btn.innerHTML = originalText;
+          showNotify("Error de conexión al cargar checklist", "error");
+          console.error(err);
+        });
+    }
+
+    // ---------- Check status ----------
+    function checkStatus() {
+      const inputs = document.querySelectorAll('input[type="radio"]:checked');
+      let hasFail = false;
+      inputs.forEach(inp => { if (inp.value === 'Rechazado') hasFail = true; });
+
+      const panel = document.getElementById('panel-rnc');
+      const btn = document.getElementById('btn-save');
+      if (hasFail) {
+        panel.classList.remove('hidden');
+        isRNC = true;
+        btn.innerHTML = "<span>Guardar Inspección (Generar RNC)</span>";
+        btn.className = "w-2/3 bg-red-600 text-white font-bold py-3 rounded-lg hover:bg-red-700 transition shadow-md flex justify-center items-center";
+      } else {
+        panel.classList.add('hidden');
+        isRNC = false;
+        btn.innerHTML = "<span>Guardar Inspección (Aprobar)</span>";
+        btn.className = "w-2/3 bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition shadow-md flex justify-center items-center";
+      }
+    }
+
+    // ---------- Submit inspección ----------
+    function submitInspection() {
+      const btn = document.getElementById('btn-save');
+
+      const checkedItemsCount = document.querySelectorAll('input[type="radio"]:checked').length;
+      if (checkedItemsCount < currentChecklist.length) {
+        return showNotify("Responda todos los ítems del checklist", "error");
+      }
+
+      if (isRNC) {
+        if (!document.getElementById('input-defecto').value || !document.getElementById('input-responsable').value) {
+          return showNotify("Complete la descripción y el responsable de la RNC", "error");
+        }
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<div class="loader h-5 w-5 border-2 border-t-2 border-white rounded-full inline-block mr-2"></div> Guardando...';
+
+      const items = [];
+      currentChecklist.forEach((c, idx) => {
+        const val = document.querySelector(`input[name="chk_${idx}"]:checked`)?.value || "-";
+        const desc = pickField(c, ['item_descripcion', 'descripcion', 'item', 'texto']) || ('Ítem ' + (idx + 1));
+        items.push({ item: desc, res: val });
+      });
+
+      const fileInput = document.getElementById('input-foto');
+      const reader = new FileReader();
+
+      const sendData = (fileData = null) => {
+        const payload = {
+          action: "saveInspeccion",
+          supervisor: document.getElementById('input-supervisor').value,
+          protocoloId: document.getElementById('input-protocolo').value,
+          area: document.getElementById('input-area').value,
+          resultado: isRNC ? "Rechazado" : "Aprobado",
+          items: items,
+          rnc: isRNC ? {
+            defecto: document.getElementById('input-defecto').value,
+            responsable: document.getElementById('input-responsable').value,
+            // enviamos dataURI completo; el backend lo procesará (es más robusto)
+            fileData: fileData || null,
+            fileName: (fileInput.files[0] && fileInput.files[0].name) ? fileInput.files[0].name : null,
+            fileType: (fileInput.files[0] && fileInput.files[0].type) ? fileInput.files[0].type : null
+          } : {}
+        };
+
+        apiPost(payload)
+          .then(res => {
+            if (res && res.status === 'success') {
+              showNotify("Guardado Correctamente", "success");
+              setTimeout(() => location.reload(), 1200);
             } else {
-                sendData(null);
+              throw new Error(res ? (res.message || 'Error desconocido') : 'Sin respuesta');
             }
-        }
+          })
+          .catch(err => {
+            showNotify("Error: " + err.message, "error");
+            btn.disabled = false;
+            btn.innerText = "Reintentar Guardar";
+            console.error(err);
+          });
+      };
 
-        function cerrarRNC(rowIndex) {
-            const supervisor = document.getElementById('input-supervisor').value;
-            const nombre = supervisor || prompt("Para cerrar, ingrese su nombre:");
-            
-            if(!nombre) {
-                if(!supervisor) return; 
-            } else {
-                if(!confirm(`¿Confirmar cierre como ${nombre}?`)) return;
-                executeClose(rowIndex, nombre);
-            }
-        }
+      if (isRNC && fileInput.files.length > 0) {
+        reader.onload = () => sendData(reader.result); // reader.result => dataURI "data:image/..;base64,..."
+        reader.readAsDataURL(fileInput.files[0]);
+      } else {
+        sendData(null);
+      }
+    }
 
-        function executeClose(rowIndex, nombre) {
-            fetch(API_URL, {
-                method: "POST",
-                body: JSON.stringify({ action: "closeRNC", rowIndex: rowIndex, supervisorCierre: nombre })
-            })
-            .then(r => r.json())
-            .then(res => {
-                if(res.status === 'success') {
-                    showNotify("RNC Cerrada", "success");
-                    loadDashboard();
-                } else {
-                    showNotify("Error: " + res.message, "error");
-                }
-            });
-        }
+    // ---------- Cerrar RNC ----------
+    function cerrarRNC(rowIndex) {
+      const supervisorField = document.getElementById('input-supervisor');
+      const supervisor = supervisorField ? supervisorField.value : '';
+      const nombre = supervisor || prompt("Para cerrar, ingrese su nombre:");
+      if (!nombre) return;
+      if (!confirm(`¿Confirmar cierre como ${nombre}?`)) return;
+      executeClose(rowIndex, nombre);
+    }
 
-        function showNotify(msg, type) {
-            const el = document.getElementById('notification');
-            el.innerText = msg;
-            el.className = `fixed top-4 right-4 px-6 py-4 rounded shadow-lg text-white font-bold z-50 transition-all duration-500 ${type === 'success' ? 'bg-green-500' : 'bg-red-600'}`;
-            el.classList.remove('hidden', 'opacity-0');
-            setTimeout(() => el.classList.add('opacity-0'), 3000);
-            setTimeout(() => el.classList.add('hidden'), 3500);
-        }
+    function executeClose(rowIndex, nombre) {
+      apiPost({ action: "closeRNC", rowIndex: Number(rowIndex), supervisorCierre: String(nombre) })
+        .then(res => {
+          if (res && res.status === 'success') {
+            showNotify("RNC Cerrada", "success");
+            loadDashboard();
+          } else {
+            showNotify("Error: " + (res ? (res.message || 'Error') : 'Sin respuesta'), "error");
+          }
+        })
+        .catch(err => {
+          showNotify("Error: " + err.message, "error");
+          console.error(err);
+        });
+    }
 
-        function cancelInspection() {
-            document.getElementById('step-1').classList.remove('hidden');
-            document.getElementById('step-2').classList.add('hidden');
-            document.getElementById('form-step-1').reset();
-            document.getElementById('form-step-2').reset();
-            document.getElementById('checklist-container').innerHTML = '';
-            document.getElementById('panel-rnc').classList.add('hidden');
-        }
-    </script>
+    // ---------- Notificaciones ----------
+    function showNotify(msg, type) {
+      const el = document.getElementById('notification');
+      el.innerText = msg;
+      el.className = `fixed top-4 right-4 px-6 py-4 rounded shadow-lg text-white font-bold z-50 transition-all duration-500 ${type === 'success' ? 'bg-green-500' : 'bg-red-600'}`;
+      el.classList.remove('hidden', 'opacity-0');
+      setTimeout(() => el.classList.add('opacity-0'), 3000);
+      setTimeout(() => el.classList.add('hidden'), 3500);
+    }
+
+    // ---------- Cancel / reset ----------
+    function cancelInspection() {
+      document.getElementById('step-1').classList.remove('hidden');
+      document.getElementById('step-2').classList.add('hidden');
+      // Reset campos manualmente (no hay formulario envolvente en el HTML original)
+      const fields = ['input-supervisor','input-protocolo','input-area','input-defecto','input-responsable','input-foto'];
+      fields.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (el.tagName === 'SELECT') el.selectedIndex = 0;
+        else if (el.type === 'file') el.value = null;
+        else el.value = '';
+      });
+      document.getElementById('checklist-container').innerHTML = '';
+      document.getElementById('panel-rnc').classList.add('hidden');
+      isRNC = false;
+      currentChecklist = [];
+      const btn = document.getElementById('btn-save');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = "<span>Guardar Inspección</span>";
+        btn.className = "w-2/3 bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition shadow-md flex justify-center items-center";
+      }
+    }
+
+    // ---------- Small helpers ----------
+    function escapeHtml(str) {
+      if (!str && str !== 0) return '';
+      return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+    }
+    function escapeJs(val) {
+      if (val === undefined || val === null) return "''";
+      if (typeof val === 'number') return val;
+      return `'${String(val).replace(/'/g, "\\'")}'`;
+    }
+
+  </script>
 </body>
 </html>
