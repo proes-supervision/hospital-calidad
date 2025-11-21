@@ -172,7 +172,7 @@
     // ------------------------------------------------
     // CONFIG: pega aquí la URL de tu Web App exec
     // ------------------------------------------------
-    const API_URL = "https://script.google.com/macros/s/AKfycbyLGfxnlugCjO1IRR_W4NylRSnBatlldRtcdRAhh4ylR3heebMj4-fOGsz4F5z6hhOUqA/exec"; // p.ej. https://script.google.com/macros/s/XXXXX/exec
+    const API_URL = "https://script.google.com/macros/s/AKfycby3CPgFwSUm4tq1L0qeyfHqSWUGFgaWpkjWLgVzd0PcL4ik7ImFKY3CMDRYWbNBFFtvmA/exec";
     // ------------------------------------------------
 
     let currentChecklist = [];
@@ -183,17 +183,15 @@
       loadDropdowns();
     });
 
-    // ---------- UTIL: parsear JSONP (espera callbackName(...); ) ----------
-    function parseJSONP(text, callbackName = "callback") {
+    // ---------- UTIL: parsear JSONP ----------
+    function parseJSONP(text, callbackName = "__cb") {
       if (!text || typeof text !== "string") throw new Error("Respuesta inválida");
-      // trimeos
       text = text.trim();
       const prefix = callbackName + "(";
       if (text.startsWith(prefix) && text.endsWith(");")) {
         const jsonPart = text.substring(prefix.length, text.length - 2);
         return JSON.parse(jsonPart);
       }
-      // si viene con otro callback automático (ej: callback123(...));
       const firstParen = text.indexOf("(");
       const lastParen = text.lastIndexOf(")");
       if (firstParen > 0 && lastParen > firstParen) {
@@ -203,7 +201,6 @@
       throw new Error("No se pudo parsear JSONP");
     }
 
-    // ---------- UTIL: obtener primer campo existente entre candidatos ----------
     function pickField(obj, candidates) {
       for (const c of candidates) {
         if (Object.prototype.hasOwnProperty.call(obj, c) && obj[c] !== undefined && obj[c] !== null) return obj[c];
@@ -211,10 +208,9 @@
       return null;
     }
 
-    // ---------- API wrapper (adapta a JSONP) ----------
+    // ---------- API wrapper ----------
     async function apiGet(params = {}) {
-      if (!API_URL || API_URL === "PEGUE_SU_URL_EXEC_AQUI") throw new Error("API_URL no configurada");
-      // forzamos callback fijo para parseo simple
+      if (!API_URL) throw new Error("API_URL no configurada");
       const cbName = "__cb";
       const url = new URL(API_URL);
       Object.keys(params).forEach(k => url.searchParams.set(k, params[k]));
@@ -224,17 +220,24 @@
       return parseJSONP(text, cbName);
     }
 
+    // IMPORTANT: envía POST como application/x-www-form-urlencoded con campo payload (JSON string)
     async function apiPost(payload = {}) {
-      if (!API_URL || API_URL === "PEGUE_SU_URL_EXEC_AQUI") throw new Error("API_URL no configurada");
+      if (!API_URL) throw new Error("API_URL no configurada");
       const cbName = "__cb";
       const url = new URL(API_URL);
-      url.searchParams.set("callback", cbName); // Apps Script lee e.parameter.callback
+      // incluimos callback en query para que el servidor pueda devolver JSONP si lo desea
+      url.searchParams.set("callback", cbName);
+      // mandamos payload como form-urlencoded -> evita preflight
+      const body = new URLSearchParams();
+      body.set("payload", JSON.stringify(payload));
+      body.set("callback", cbName); // opcional en server
       const res = await fetch(url.toString(), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: body.toString()
       });
       const text = await res.text();
+      // el servidor en nuestro Code.gs devuelve JSONP cuando callback existe
       return parseJSONP(text, cbName);
     }
 
@@ -269,39 +272,33 @@
       const supSel = document.getElementById('input-supervisor');
       const protSel = document.getElementById('input-protocolo');
 
-      if (!API_URL || API_URL === "PEGUE_SU_URL_EXEC_AQUI") {
-        showNotify("ERROR: La URL de la API NO está configurada.", "error");
+      if (!API_URL) {
         supSel.innerHTML = '<option value="">ERROR: Configuración</option>';
         protSel.innerHTML = '<option value="">ERROR: Configuración</option>';
+        showNotify("ERROR: API_URL no configurada", "error");
         return;
       }
 
-      // Usuarios
       apiGet({ action: 'getUsuarios' })
         .then(res => {
           if (res.status === 'success' && Array.isArray(res.usuarios)) {
             supSel.innerHTML = '<option value="">Seleccione su nombre...</option>';
-            res.usuarios.forEach(u => {
-              supSel.innerHTML += `<option value="${escapeHtml(String(u))}">${escapeHtml(String(u))}</option>`;
-            });
+            res.usuarios.forEach(u => supSel.innerHTML += `<option value="${escapeHtml(String(u))}">${escapeHtml(String(u))}</option>`);
           } else {
             supSel.innerHTML = '<option value="">Error cargando usuarios</option>';
-            if (res && res.message) showNotify("Error API: " + res.message, "error");
           }
         })
         .catch(err => {
           supSel.innerHTML = '<option value="">Error de conexión</option>';
-          showNotify("Error: No se pudo contactar al servidor de la API.", "error");
+          showNotify("Error: No se pudo contactar al servidor (usuarios).", "error");
           console.error(err);
         });
 
-      // Protocolos
       apiGet({ action: 'getProtocolos' })
         .then(res => {
           if (res.status === 'success' && Array.isArray(res.protocolos)) {
             protSel.innerHTML = '<option value="">Seleccione un protocolo...</option>';
             res.protocolos.forEach(p => {
-              // buscamos campos posibles
               const id = pickField(p, ['protocolo_id', 'protocolo', 'id']) || '';
               const label = pickField(p, ['nombre_protocolo', 'nombre', 'name']) || id || 'Protocolo';
               protSel.innerHTML += `<option value="${escapeHtml(String(id))}">${escapeHtml(String(label))}</option>`;
@@ -312,6 +309,7 @@
         })
         .catch(err => {
           protSel.innerHTML = '<option value="">Error de conexión</option>';
+          showNotify("Error: No se pudo contactar al servidor (protocolos).", "error");
           console.error(err);
         });
     }
@@ -319,13 +317,7 @@
     // ---------- Dashboard ----------
     function loadDashboard() {
       const tbody = document.getElementById('table-rncs');
-      if (!API_URL || API_URL === "PEGUE_SU_URL_EXEC_AQUI") {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-red-500 bg-red-50 rounded">ERROR: Configure la API URL.</td></tr>`;
-        return;
-      }
-
       tbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-gray-500"><div class="loader h-8 w-8 border-4 border-t-4 border-blue-200 rounded-full mx-auto mb-2"></div>Conectando...</td></tr>';
-
       apiGet({ action: 'getRNCs', bust: Date.now() })
         .then(res => {
           tbody.innerHTML = '';
@@ -334,19 +326,15 @@
             tbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-green-600 font-bold bg-green-50 rounded-lg">¡Todo conforme! Sin RNCs.</td></tr>';
             return;
           }
-
           rncs.forEach(item => {
-            // adaptamos nombres de campo posibles
             const fecha = pickField(item, ['fecha', 'fecha_hora', 'date']) || '';
             const supervisor = pickField(item, ['supervisor', 'nombre', 'responsable']) || '';
             const area = pickField(item, ['area', 'ubicacion', 'location']) || '';
             const defecto = pickField(item, ['defecto', 'descripcion', 'issue']) || '';
             const foto = pickField(item, ['foto_url', 'foto', 'file_url']) || '';
             const rowIndex = item.rowIndex || item.row || '';
-
             const link = foto ? `<a href="${escapeHtml(String(foto))}" target="_blank" class="text-blue-600 hover:underline font-bold"><i class="fas fa-image"></i> Ver</a>` : '-';
             const fechaClean = (String(fecha || '')).split(' ')[0] || 'N/A';
-
             tbody.innerHTML += `
               <tr class="border-b hover:bg-blue-50 transition">
                 <td class="py-3 px-4 text-gray-600 text-xs">${escapeHtml(fechaClean)}</td>
@@ -363,10 +351,7 @@
           });
         })
         .catch(err => {
-          tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-red-500 bg-red-50 border border-red-200 rounded">
-            <b>Error de Conexión:</b> No se pudo contactar al servidor.<br>
-            <span class="text-xs">Verifique la URL de la API en el código.</span>
-          </td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-red-500 bg-red-50 border border-red-200 rounded"><b>Error de Conexión:</b> No se pudo contactar al servidor.<br><span class="text-xs">Verifique la URL de la API en el código.</span></td></tr>`;
           console.error(err);
         });
     }
@@ -387,16 +372,17 @@
         .then(res => {
           btn.disabled = false;
           btn.innerHTML = originalText;
-
-          if (!res || res.status === 'error' || !Array.isArray(res.checklist) || res.checklist.length === 0) {
+          if (!res || res.status === 'error') {
+            showNotify("Error API: " + (res.message || "sin detalle"), "error");
+            return;
+          }
+          if (!Array.isArray(res.checklist) || res.checklist.length === 0) {
             showNotify("No se encontró checklist para este protocolo", "error");
             return;
           }
-
           const cont = document.getElementById('checklist-container');
           cont.innerHTML = '';
           currentChecklist = res.checklist;
-
           res.checklist.forEach((item, idx) => {
             const desc = pickField(item, ['item_descripcion', 'descripcion', 'item', 'texto']) || 'Ítem';
             const spec = pickField(item, ['especificacion', 'spec', 'detalle']) || '';
@@ -411,7 +397,6 @@
                 </div>
               </div>`;
           });
-
           document.getElementById('step-1').classList.add('hidden');
           document.getElementById('step-2').classList.remove('hidden');
         })
@@ -428,7 +413,6 @@
       const inputs = document.querySelectorAll('input[type="radio"]:checked');
       let hasFail = false;
       inputs.forEach(inp => { if (inp.value === 'Rechazado') hasFail = true; });
-
       const panel = document.getElementById('panel-rnc');
       const btn = document.getElementById('btn-save');
       if (hasFail) {
@@ -447,18 +431,11 @@
     // ---------- Submit inspección ----------
     function submitInspection() {
       const btn = document.getElementById('btn-save');
-
       const checkedItemsCount = document.querySelectorAll('input[type="radio"]:checked').length;
-      if (checkedItemsCount < currentChecklist.length) {
-        return showNotify("Responda todos los ítems del checklist", "error");
-      }
-
+      if (checkedItemsCount < currentChecklist.length) return showNotify("Responda todos los ítems del checklist", "error");
       if (isRNC) {
-        if (!document.getElementById('input-defecto').value || !document.getElementById('input-responsable').value) {
-          return showNotify("Complete la descripción y el responsable de la RNC", "error");
-        }
+        if (!document.getElementById('input-defecto').value || !document.getElementById('input-responsable').value) return showNotify("Complete la descripción y el responsable de la RNC", "error");
       }
-
       btn.disabled = true;
       btn.innerHTML = '<div class="loader h-5 w-5 border-2 border-t-2 border-white rounded-full inline-block mr-2"></div> Guardando...';
 
@@ -483,7 +460,6 @@
           rnc: isRNC ? {
             defecto: document.getElementById('input-defecto').value,
             responsable: document.getElementById('input-responsable').value,
-            // enviamos dataURI completo; el backend lo procesará (es más robusto)
             fileData: fileData || null,
             fileName: (fileInput.files[0] && fileInput.files[0].name) ? fileInput.files[0].name : null,
             fileType: (fileInput.files[0] && fileInput.files[0].type) ? fileInput.files[0].type : null
@@ -494,7 +470,7 @@
           .then(res => {
             if (res && res.status === 'success') {
               showNotify("Guardado Correctamente", "success");
-              setTimeout(() => location.reload(), 1200);
+              setTimeout(() => location.reload(), 900);
             } else {
               throw new Error(res ? (res.message || 'Error desconocido') : 'Sin respuesta');
             }
@@ -508,7 +484,7 @@
       };
 
       if (isRNC && fileInput.files.length > 0) {
-        reader.onload = () => sendData(reader.result); // reader.result => dataURI "data:image/..;base64,..."
+        reader.onload = () => sendData(reader.result);
         reader.readAsDataURL(fileInput.files[0]);
       } else {
         sendData(null);
@@ -522,17 +498,14 @@
       const nombre = supervisor || prompt("Para cerrar, ingrese su nombre:");
       if (!nombre) return;
       if (!confirm(`¿Confirmar cierre como ${nombre}?`)) return;
-      executeClose(rowIndex, nombre);
-    }
-
-    function executeClose(rowIndex, nombre) {
-      apiPost({ action: "closeRNC", rowIndex: Number(rowIndex), supervisorCierre: String(nombre) })
+      // Usamos GET JSONP para cierre (evita preflight)
+      apiGet({ action: "closeRNC", rowIndex: rowIndex, supervisorCierre: nombre })
         .then(res => {
           if (res && res.status === 'success') {
             showNotify("RNC Cerrada", "success");
             loadDashboard();
           } else {
-            showNotify("Error: " + (res ? (res.message || 'Error') : 'Sin respuesta'), "error");
+            showNotify("Error: " + (res ? res.message || 'Error' : 'Sin respuesta'), "error");
           }
         })
         .catch(err => {
@@ -555,7 +528,6 @@
     function cancelInspection() {
       document.getElementById('step-1').classList.remove('hidden');
       document.getElementById('step-2').classList.add('hidden');
-      // Reset campos manualmente (no hay formulario envolvente en el HTML original)
       const fields = ['input-supervisor','input-protocolo','input-area','input-defecto','input-responsable','input-foto'];
       fields.forEach(id => {
         const el = document.getElementById(id);
@@ -586,7 +558,6 @@
       if (typeof val === 'number') return val;
       return `'${String(val).replace(/'/g, "\\'")}'`;
     }
-
   </script>
 </body>
 </html>
